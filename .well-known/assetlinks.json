@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.willdailha.twa",
+        "sha256_cert_fingerprints": ["25:17:FB:EA:77:4D:9D:61:80:A5:04:37:02:4B:9F:A7:56:DF:18:85:6F:D8:63:C7:8E:4F:74:91:9C:36:F9:F9"]
+      }
+    }]
