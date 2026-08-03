@@ -1,16 +1,15 @@
 {
   "name": "Soul Ateliê",
   "short_name": "Soul",
-  "start_url": "./index.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#b85d59",
   "icons": [
     {
-      "src": "./Simplesmente%20Soul_20251120_133912_0000.jpg",
+      "src": "Simplesmente Soul_20251120_133912_0000.jpg",
       "sizes": "512x512",
       "type": "image/jpeg"
     }
   ]
 }
-
