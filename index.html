@@ -200,7 +200,7 @@
                         const parsed = JSON.parse(saved);
                         if (parsed.config) state.config = { ...state.config, ...parsed.config };
                         if (parsed.pedidos) state.pedidos = parsed.pedidos;
-                        if (parsed.estoque) state.estoque = parsed.estoque;
+                        if (parsed.estoque) state.estoque = parsed.estoque.filter(e => parseFloat(e.qtd || 0) > 0);
                         if (parsed.receitas) state.receitas = parsed.receitas;
                         if (parsed.custos) state.custos = parsed.custos;
                         if (parsed.financeiro) state.financeiro = parsed.financeiro;
@@ -215,13 +215,26 @@
 
         loadState();
 
-        // --- FUNÇÃO DE REORDENAÇÃO (MOVER PARA CIMA/BAIXO) ---
-        function moveItem(arrayName, index, direction) {
+        // --- SISTEMA DE DRAG & DROP (REORGANIZAR LISTAS) ---
+        let draggedData = { index: null, arrayName: null };
+
+        function drag(ev, index, arrayName) {
+            draggedData = { index, arrayName };
+            ev.dataTransfer.effectAllowed = 'move';
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.dataTransfer.dropEffect = 'move';
+        }
+
+        function drop(ev, targetIndex, arrayName) {
+            ev.preventDefault();
+            if (draggedData.arrayName !== arrayName || draggedData.index === null || draggedData.index === targetIndex) return;
             const arr = state[arrayName];
-            const newIndex = index + direction;
-            if (newIndex < 0 || newIndex >= arr.length) return;
-            const item = arr.splice(index, 1)[0];
-            arr.splice(newIndex, 0, item);
+            const item = arr.splice(draggedData.index, 1)[0];
+            arr.splice(targetIndex, 0, item);
+            draggedData = { index: null, arrayName: null };
             saveState();
             render();
         }
@@ -320,14 +333,13 @@
                         <button onclick="openForm('custo')" class="bg-brand text-white px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95">+ Calcular</button>
                     </div>
                     ${state.custos.map((c, index) => `
-                        <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative flex items-start gap-3">
-                            <div class="flex flex-col justify-center shrink-0 pt-1 border-r border-stone-100 pr-2">
-                                <button onclick="event.stopPropagation(); moveItem('custos', ${index}, -1)" ${index === 0 ? 'disabled class="text-stone-200 cursor-not-allowed p-1"' : 'class="text-stone-400 hover:text-stone-700 p-1 active:scale-95"'}>
-                                    <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
-                                </button>
-                                <button onclick="event.stopPropagation(); moveItem('custos', ${index}, 1)" ${index === state.custos.length - 1 ? 'disabled class="text-stone-200 cursor-not-allowed p-1"' : 'class="text-stone-400 hover:text-stone-700 p-1 active:scale-95"'}>
-                                    <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
-                                </button>
+                        <div draggable="true" 
+                             ondragstart="drag(event, ${index}, 'custos')" 
+                             ondragover="allowDrop(event)" 
+                             ondrop="drop(event, ${index}, 'custos')"
+                             class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative flex items-start gap-3 cursor-grab active:cursor-grabbing">
+                            <div class="flex items-center justify-center shrink-0 pt-1 pr-1 text-stone-300">
+                                <i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <button onclick="openForm('custo', ${c.id})" class="absolute top-4 right-4 text-stone-400 active:scale-95"><i data-lucide="edit-3" class="w-4 h-4 pointer-events-none"></i></button>
@@ -377,14 +389,13 @@
                         <div class="flex justify-between items-end mb-4"><h3 class="font-bold">Registro de Despesas</h3></div>
                         ${state.financeiro.length === 0 ? '<p class="text-center text-sm text-stone-400 py-6">Nenhuma despesa cadastrada.</p>' : ''}
                         ${state.financeiro.map((t, index) => `
-                            <div class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 border border-stone-100 gap-3">
-                                <div class="flex flex-col justify-center shrink-0 border-r border-stone-100 pr-2">
-                                    <button onclick="event.stopPropagation(); moveItem('financeiro', ${index}, -1)" ${index === 0 ? 'disabled class="text-stone-200 cursor-not-allowed p-1"' : 'class="text-stone-400 hover:text-stone-700 p-1 active:scale-95"'}>
-                                        <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
-                                    </button>
-                                    <button onclick="event.stopPropagation(); moveItem('financeiro', ${index}, 1)" ${index === state.financeiro.length - 1 ? 'disabled class="text-stone-200 cursor-not-allowed p-1"' : 'class="text-stone-400 hover:text-stone-700 p-1 active:scale-95"'}>
-                                        <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
-                                    </button>
+                            <div draggable="true" 
+                                 ondragstart="drag(event, ${index}, 'financeiro')" 
+                                 ondragover="allowDrop(event)" 
+                                 ondrop="drop(event, ${index}, 'financeiro')"
+                                 class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 border border-stone-100 gap-3 cursor-grab active:cursor-grabbing">
+                                <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300">
+                                    <i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i>
                                 </div>
                                 <div class="flex items-center justify-between flex-1 min-w-0 cursor-pointer active:scale-95 transition-transform" onclick="openForm('financeiro', ${t.id})">
                                     <div class="flex gap-3 items-center min-w-0">
@@ -412,14 +423,13 @@
                     </div>
                     ${array.length === 0 ? `<p class="text-center text-sm text-stone-400 py-10">Nenhum item cadastrado.</p>` : ''}
                     ${array.map((item, index) => `
-                        <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex items-center gap-3">
-                            <div class="flex flex-col justify-center shrink-0 border-r border-stone-100 pr-2">
-                                <button onclick="event.stopPropagation(); moveItem('${arrayName}', ${index}, -1)" ${index === 0 ? 'disabled class="text-stone-200 cursor-not-allowed p-1"' : 'class="text-stone-400 hover:text-stone-700 p-1 active:scale-95"'}>
-                                    <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
-                                </button>
-                                <button onclick="event.stopPropagation(); moveItem('${arrayName}', ${index}, 1)" ${index === array.length - 1 ? 'disabled class="text-stone-200 cursor-not-allowed p-1"' : 'class="text-stone-400 hover:text-stone-700 p-1 active:scale-95"'}>
-                                    <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
-                                </button>
+                        <div draggable="true" 
+                             ondragstart="drag(event, ${index}, '${arrayName}')" 
+                             ondragover="allowDrop(event)" 
+                             ondrop="drop(event, ${index}, '${arrayName}')"
+                             class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex items-center gap-3 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md">
+                            <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300">
+                                <i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i>
                             </div>
                             <div class="flex-1 min-w-0">
                                 ${renderItem(item, index)}
@@ -499,7 +509,7 @@
                 title: 'Item de Estoque',
                 fields: [
                     { id: 'f-item', label: 'Selecionar Produto', type: 'product_select_all', key: 'item' },
-                    { id: 'f-qtd', label: 'Quantidade Pronta Entrega', type: 'number', key: 'qtd' },
+                    { id: 'f-qtd', label: 'Quantidade Pronta Entrega (0 para apagar)', type: 'number', key: 'qtd' },
                     { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' },
                     { id: 'f-img', label: 'Foto', type: 'file', key: 'img' }
                 ]
@@ -595,7 +605,7 @@
             let item = {};
             if (type === 'perfil') item = state.config;
             else if (id) {
-                const arr = type === 'financeiro' ? state.financeiro : (type === 'produto' ? state.produtos : state[type + 's']);
+                const arr = type === 'financeiro' ? state.financeiro : (type === 'produto' ? state.produtos : (type === 'estoque' ? state.estoque : state[type + 's']));
                 item = arr.find(i => i.id === id);
             }
 
@@ -614,7 +624,7 @@
             def.fields.forEach(f => {
                 let val = item && item[f.key] !== undefined ? item[f.key] : '';
                 if (f.key === 'data' && !val) val = new Date().toISOString().split('T')[0];
-                if (f.key === 'qtd' && !val && type === 'pedido') val = 1;
+                if (f.key === 'qtd' && !val && (type === 'pedido' || type === 'estoque')) val = 1;
 
                 html += `<div class="mb-4"><label class="block text-xs font-bold text-stone-500 mb-1">${f.label}</label>`;
 
@@ -900,19 +910,24 @@
                 else state.produtos.push(newData);
                 navigate('produtos');
             } else if (type === 'estoque') {
-                if (!newData.qtd || newData.qtd < 1) newData.qtd = 1;
-                if (editingId) {
-                    state.estoque[state.estoque.findIndex(i => i.id === editingId)] = newData;
+                if (!newData.qtd || newData.qtd <= 0) {
+                    if (editingId) {
+                        state.estoque = state.estoque.filter(i => i.id !== editingId);
+                    }
                 } else {
-                    const existingIndex = state.estoque.findIndex(e => e.item === newData.item);
-                    if (existingIndex !== -1) {
-                        let currentQtd = parseFloat(state.estoque[existingIndex].qtd) || 0;
-                        let addedQtd = parseFloat(newData.qtd) || 0;
-                        state.estoque[existingIndex].qtd = currentQtd + addedQtd;
-                        if (newData.obs) state.estoque[existingIndex].obs = newData.obs;
-                        if (newData.img) state.estoque[existingIndex].img = newData.img;
+                    if (editingId) {
+                        state.estoque[state.estoque.findIndex(i => i.id === editingId)] = newData;
                     } else {
-                        state.estoque.push(newData);
+                        const existingIndex = state.estoque.findIndex(e => e.item === newData.item);
+                        if (existingIndex !== -1) {
+                            let currentQtd = parseFloat(state.estoque[existingIndex].qtd) || 0;
+                            let addedQtd = parseFloat(newData.qtd) || 0;
+                            state.estoque[existingIndex].qtd = currentQtd + addedQtd;
+                            if (newData.obs) state.estoque[existingIndex].obs = newData.obs;
+                            if (newData.img) state.estoque[existingIndex].img = newData.img;
+                        } else {
+                            state.estoque.push(newData);
+                        }
                     }
                 }
                 navigate('estoque');
@@ -927,6 +942,9 @@
                     if (stockItem) {
                         let atual = parseFloat(stockItem.qtd) || 0;
                         stockItem.qtd = Math.max(0, atual - parseFloat(newData.qtd));
+                        if (stockItem.qtd <= 0) {
+                            state.estoque = state.estoque.filter(e => e.id !== stockItem.id);
+                        }
                     }
                 }
 
