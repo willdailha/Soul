@@ -163,8 +163,8 @@
     </div>
 
     <script>
-        // --- ESTADO GLOBAL & LOCAL STORAGE ---
-        const STORAGE_KEY = 'soul_atelier_state_v4';
+        // --- ESTADO GLOBAL & LOCAL STORAGE ROBUSTO ---
+        const STORAGE_KEY = 'soul_atelier_data_v1';
 
         const state = {
             currentView: 'home',
@@ -187,19 +187,23 @@
         }
 
         function loadState() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    if (parsed.config) state.config = { ...state.config, ...parsed.config };
-                    if (parsed.pedidos) state.pedidos = parsed.pedidos;
-                    if (parsed.estoque) state.estoque = parsed.estoque;
-                    if (parsed.receitas) state.receitas = parsed.receitas;
-                    if (parsed.custos) state.custos = parsed.custos;
-                    if (parsed.financeiro) state.financeiro = parsed.financeiro;
-                    if (parsed.produtos) state.produtos = parsed.produtos;
-                } catch(e) {
-                    console.error("Erro ao carregar dados salvos", e);
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_state_v4', 'soul_atelier_state_v3', 'soul_atelier_state_v2', 'soul_atelier_estoque'];
+            for (const k of keysToTry) {
+                const saved = localStorage.getItem(k);
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        if (parsed.config) state.config = { ...state.config, ...parsed.config };
+                        if (parsed.pedidos) state.pedidos = parsed.pedidos;
+                        if (parsed.estoque) state.estoque = parsed.estoque;
+                        if (parsed.receitas) state.receitas = parsed.receitas;
+                        if (parsed.custos) state.custos = parsed.custos;
+                        if (parsed.financeiro) state.financeiro = parsed.financeiro;
+                        if (parsed.produtos) state.produtos = parsed.produtos;
+                        break;
+                    } catch(e) {
+                        console.error("Erro ao carregar chave", k, e);
+                    }
                 }
             }
         }
@@ -224,28 +228,21 @@
                 const faturamentoBruto = entregues.reduce((acc, p) => acc + Number(p.valor || 0), 0);
                 const totalDespesas = state.financeiro.reduce((acc, t) => acc + Number(t.valor || 0), 0);
                 const faturamentoLiquido = faturamentoBruto - totalDespesas;
-                const meta = state.config.metaMensal;
-                const pct = Math.min(Math.round((faturamentoLiquido / meta) * 100) || 0, 100);
 
                 return `
                 <div class="px-5 space-y-5 fade-in pt-2">
                     <div>
                         <h2 class="font-heading text-2xl font-bold text-stone-900 tracking-tight">Olá, ${state.config.artisanName}</h2>
-                        <p class="text-sm text-stone-500 mt-1">${entregues.length} pedidos entregues · R$ ${faturamentoBruto.toFixed(2).replace('.',',')} em vendas</p>
+                        <p class="text-sm text-stone-500 mt-1">${entregues.length} pedidos entregues</p>
                     </div>
-                    <button onclick="openForm('perfil')" class="w-full text-left bg-gradient-to-br from-[#A84A5C] to-[#8A3A4C] rounded-[28px] p-6 text-white shadow-lg active:scale-[0.99] transition-transform">
-                        <div class="flex items-start justify-between mb-4">
-                            <div>
-                                <p class="text-xs uppercase tracking-[0.15em] opacity-80 mb-1">Faturamento Líquido (Meta)</p>
-                                <p class="font-heading text-2xl font-bold">R$ ${faturamentoLiquido.toFixed(2).replace('.',',')} <span class="text-sm font-normal opacity-70"> / R$ ${meta.toFixed(2).replace('.',',')}</span></p>
-                            </div>
-                            <span class="text-xs font-medium bg-white/20 px-3 py-1.5 rounded-full">${pct}%</span>
+                    <div class="w-full text-left bg-gradient-to-br from-[#A84A5C] to-[#8A3A4C] rounded-[28px] p-6 text-white shadow-lg">
+                        <p class="text-xs uppercase tracking-[0.15em] opacity-80 mb-1">Faturamento Líquido</p>
+                        <p class="font-heading text-3xl font-bold">R$ ${faturamentoLiquido.toFixed(2).replace('.',',')}</p>
+                        <div class="flex justify-between text-xs opacity-90 mt-4 pt-4 border-t border-white/20">
+                            <span>Entradas: R$ ${faturamentoBruto.toFixed(2).replace('.',',')}</span>
+                            <span>Despesas: R$ ${totalDespesas.toFixed(2).replace('.',',')}</span>
                         </div>
-                        <div class="h-2 bg-white/25 rounded-full overflow-hidden">
-                            <div class="h-full bg-white rounded-full transition-all duration-500" style="width: ${pct}%;"></div>
-                        </div>
-                        <p class="text-xs opacity-80 mt-3 text-center">Toque para editar Perfil & Meta</p>
-                    </button>
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-3">
                         <button onclick="navigate('pedidos')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#F4E3E1] text-[#A84A5C] flex items-center justify-center"><i data-lucide="package" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Pedidos</span></button>
@@ -458,11 +455,10 @@
         // --- DEFINIÇÃO DOS FORMULÁRIOS ---
         const formDefinitions = {
             perfil: {
-                title: 'Editar Perfil & Metas',
+                title: 'Editar Perfil',
                 fields: [
                     { id: 'f-art', label: 'Nome do Artesão', type: 'text', key: 'artisanName' },
                     { id: 'f-ate', label: 'Nome do Ateliê', type: 'text', key: 'atelierName' },
-                    { id: 'f-meta', label: 'Meta Líquida Mensal (R$)', type: 'number', key: 'metaMensal' },
                     { id: 'f-hora', label: 'Sua Mão de Obra (R$/hora)', type: 'number', key: 'valorHoraGlobal' },
                     { id: 'f-img', label: 'Foto de Perfil', type: 'file', key: 'avatar' }
                 ]
@@ -487,9 +483,9 @@
                 title: 'Pedido',
                 fields: [
                     { id: 'f-cli', label: 'Nome do Cliente', type: 'text', key: 'cliente' },
-                    { id: 'f-item', label: 'Selecionar Produto', type: 'product_select', key: 'item' },
                     { id: 'f-status', label: 'Status', type: 'select', options: ['Pendente', 'Em Produção', 'Entregue'], key: 'status' },
                     { id: 'f-venderEstoque', label: 'Vender item do estoque?', type: 'checkbox', key: 'venderEstoque' },
+                    { id: 'f-item', label: 'Selecionar Produto', type: 'product_select', key: 'item' },
                     { id: 'f-qtdEstoque', label: 'Quantidade a retirar do estoque', type: 'number', key: 'qtdEstoque' },
                     { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' },
                     { id: 'f-img', label: 'Foto de Referência', type: 'file', key: 'img' }
@@ -498,7 +494,7 @@
             estoque: {
                 title: 'Item de Estoque',
                 fields: [
-                    { id: 'f-item', label: 'Selecionar Produto', type: 'product_select', key: 'item' },
+                    { id: 'f-item', label: 'Selecionar Produto', type: 'product_select_all', key: 'item' },
                     { id: 'f-qtd', label: 'Quantidade Pronta Entrega', type: 'number', key: 'qtd' },
                     { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' },
                     { id: 'f-img', label: 'Foto', type: 'file', key: 'img' }
@@ -536,6 +532,31 @@
                 ]
             }
         };
+
+        // --- ATUALIZAR LISTA DE PRODUTOS NO PEDIDO (COM FILTRO DE ESTOQUE) ---
+        function updateProductSelectOptions(selectedVal = '') {
+            const selectEl = document.getElementById('f-item');
+            const checkboxEl = document.getElementById('f-venderEstoque');
+            if (!selectEl) return;
+            
+            const onlyStock = checkboxEl ? checkboxEl.checked : false;
+            let availableProducts = state.produtos;
+
+            if (onlyStock) {
+                const stockProductNames = state.estoque
+                    .filter(e => parseFloat(e.qtd || 0) > 0)
+                    .map(e => e.item);
+                availableProducts = state.produtos.filter(p => stockProductNames.includes(p.nome));
+            }
+
+            let optionsHtml = '';
+            if (availableProducts.length === 0) {
+                optionsHtml = `<option value="">${onlyStock ? 'Nenhum produto disponível em estoque' : 'Nenhum produto cadastrado'}</option>`;
+            } else {
+                optionsHtml = `<option value="">Selecione um produto...</option>` + availableProducts.map(p => `<option value="${p.nome}" ${selectedVal===p.nome?'selected':''}>${p.nome} (R$ ${Number(p.preco||0).toFixed(2)})</option>`).join('');
+            }
+            selectEl.innerHTML = optionsHtml;
+        }
 
         // --- CONTROLE DE MODAIS ---
         function toggleActionSheet(event) {
@@ -598,12 +619,9 @@
                 } else if (f.type === 'select') {
                     html += `<select id="${f.id}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">${f.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>`;
                 } else if (f.type === 'product_select') {
-                    let optionsHtml = '';
-                    if (state.produtos.length === 0) {
-                        optionsHtml = `<option value="">Nenhum produto cadastrado</option>`;
-                    } else {
-                        optionsHtml = `<option value="">Selecione um produto...</option>` + state.produtos.map(p => `<option value="${p.nome}" ${val===p.nome?'selected':''}>${p.nome} (R$ ${Number(p.preco||0).toFixed(2)})</option>`).join('');
-                    }
+                    html += `<select id="${f.id}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm"><option value="">Carregando...</option></select>`;
+                } else if (f.type === 'product_select_all') {
+                    let optionsHtml = state.produtos.length === 0 ? '<option value="">Nenhum produto cadastrado</option>' : '<option value="">Selecione um produto...</option>' + state.produtos.map(p => `<option value="${p.nome}" ${val===p.nome?'selected':''}>${p.nome}</option>`).join('');
                     html += `<select id="${f.id}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">${optionsHtml}</select>`;
                 } else if (f.type === 'checkbox') {
                     html += `<input type="checkbox" id="${f.id}" ${val ? 'checked' : ''} class="w-5 h-5 accent-brand rounded border-stone-300">`;
@@ -622,6 +640,16 @@
 
             document.getElementById('form-body').innerHTML = html;
             document.getElementById('btn-delete').classList.toggle('hidden', !id);
+
+            if (type === 'pedido') {
+                updateProductSelectOptions(item ? item.item : '');
+                const cb = document.getElementById('f-venderEstoque');
+                if (cb) {
+                    cb.addEventListener('change', () => {
+                        updateProductSelectOptions();
+                    });
+                }
+            }
 
             document.getElementById('overlay-form').classList.remove('hidden');
         }
@@ -833,11 +861,9 @@
                 else state.produtos.push(newData);
                 navigate('produtos');
             } else if (type === 'pedido') {
-                // Sincroniza o valor automaticamente do produto cadastrado
                 const prod = state.produtos.find(p => p.nome === newData.item);
                 newData.valor = prod ? Number(prod.preco || 0) : 0;
 
-                // Baixa automática no estoque se marcado
                 if (newData.venderEstoque && newData.qtdEstoque > 0) {
                     const stockItem = state.estoque.find(e => e.item === newData.item);
                     if (stockItem) {
@@ -875,7 +901,7 @@
         function deleteCurrentItem() {
             if(!confirm('Tem certeza que deseja excluir?')) return;
             const { type, editingId } = state.formState;
-            const targetArray = type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'custo' ? 'custos' : (type === 'produto' ? 'produtos' : type + 's')));
+            const targetArray = type === 'pedido' ? 'pedidos' : (type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'custo' ? 'custos' : (type === 'produto' ? 'produtos' : (type === 'receita' ? 'receitas' : type + 's')))));
             state[targetArray] = state[targetArray].filter(i => i.id !== editingId);
             saveState();
             closeAllModals();
