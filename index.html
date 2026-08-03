@@ -164,7 +164,7 @@
 
     <script>
         // --- ESTADO GLOBAL & LOCAL STORAGE ROBUSTO ---
-        const STORAGE_KEY = 'soul_atelier_data_v1';
+        const STORAGE_KEY = 'soul_atelier_data_v2';
 
         const state = {
             currentView: 'home',
@@ -183,11 +183,16 @@
         };
 
         function saveState() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.error("Erro ao salvar no localStorage (espaço excedido):", e);
+                alert("Atenção: O armazenamento ficou cheio devido ao tamanho das fotos. Tente usar fotos mais leves.");
+            }
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_state_v4', 'soul_atelier_state_v3', 'soul_atelier_state_v2', 'soul_atelier_estoque'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v1', 'soul_atelier_state_v4', 'soul_atelier_state_v3', 'soul_atelier_state_v2', 'soul_atelier_estoque'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -658,6 +663,50 @@
             document.getElementById('overlay-form').classList.add('hidden');
         }
 
+        // --- COMPRESSÃO AUTOMÁTICA DE IMAGEM (EVITA ESTOURO DE ESPAÇO) ---
+        function handleImageUpload(event, previewId) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600;
+                        const MAX_HEIGHT = 600;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Converte para JPEG com 70% de qualidade (leve e compacto)
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                        document.getElementById(previewId).src = compressedDataUrl;
+                        document.getElementById(previewId).classList.remove('hidden');
+                        state.formState.tempImage = compressedDataUrl;
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
         // --- CONTROLE DE VISUALIZAÇÃO DE RECEITAS ---
         function openRecipeDetail(id) {
             closeAllModals();
@@ -811,19 +860,6 @@
             document.getElementById('overlay-order').classList.add('hidden');
             document.getElementById('overlay-stock').classList.add('hidden');
             document.getElementById('overlay-product').classList.add('hidden');
-        }
-
-        function handleImageUpload(event, previewId) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    document.getElementById(previewId).src = e.target.result;
-                    document.getElementById(previewId).classList.remove('hidden');
-                    state.formState.tempImage = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
         }
 
         function submitForm() {
