@@ -164,11 +164,11 @@
 
     <script>
         // --- ESTADO GLOBAL & LOCAL STORAGE ROBUSTO ---
-        const STORAGE_KEY = 'soul_atelier_data_v2';
+        const STORAGE_KEY = 'soul_atelier_data_v3';
 
         const state = {
             currentView: 'home',
-            config: { artisanName: 'William', atelierName: 'SOUL', avatar: '', metaMensal: 3000, valorHoraGlobal: 35.00 },
+            config: { artisanName: 'William', atelierName: 'SOUL', avatar: '' },
             pedidos: [],
             estoque: [],
             receitas: [],
@@ -186,13 +186,13 @@
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             } catch (e) {
-                console.error("Erro ao salvar no localStorage (espaço excedido):", e);
+                console.error("Erro ao salvar no localStorage:", e);
                 alert("Atenção: O armazenamento ficou cheio devido ao tamanho das fotos. Tente usar fotos mais leves.");
             }
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v1', 'soul_atelier_state_v4', 'soul_atelier_state_v3', 'soul_atelier_state_v2', 'soul_atelier_estoque'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v2', 'soul_atelier_data_v1', 'soul_atelier_state_v4', 'soul_atelier_state_v3', 'soul_atelier_state_v2'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -270,7 +270,7 @@
                 <div class="flex gap-4 cursor-pointer items-center w-full" onclick="openOrderDetail(${p.id})">
                     ${p.img ? `<img src="${p.img}" class="w-20 h-20 rounded-xl object-cover shrink-0">` : `<div class="w-20 h-20 rounded-xl bg-stone-100 flex items-center justify-center text-stone-300 shrink-0"><i data-lucide="image" class="pointer-events-none"></i></div>`}
                     <div class="flex-1 min-w-0">
-                        <h4 class="font-bold text-stone-800 truncate">${p.item}</h4>
+                        <h4 class="font-bold text-stone-800 truncate">${p.item} <span class="text-xs font-normal text-stone-500">(Qtd: ${p.qtd || 1})</span></h4>
                         <p class="text-xs text-stone-500 mb-1">Cliente: ${p.cliente}</p>
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded ${statusBg}">${p.status}</span>
                         <p class="text-sm font-bold text-brand mt-1">R$ ${Number(p.valor || 0).toFixed(2).replace('.',',')}</p>
@@ -464,7 +464,6 @@
                 fields: [
                     { id: 'f-art', label: 'Nome do Artesão', type: 'text', key: 'artisanName' },
                     { id: 'f-ate', label: 'Nome do Ateliê', type: 'text', key: 'atelierName' },
-                    { id: 'f-hora', label: 'Sua Mão de Obra (R$/hora)', type: 'number', key: 'valorHoraGlobal' },
                     { id: 'f-img', label: 'Foto de Perfil', type: 'file', key: 'avatar' }
                 ]
             },
@@ -491,7 +490,7 @@
                     { id: 'f-status', label: 'Status', type: 'select', options: ['Pendente', 'Em Produção', 'Entregue'], key: 'status' },
                     { id: 'f-venderEstoque', label: 'Vender item do estoque?', type: 'checkbox', key: 'venderEstoque' },
                     { id: 'f-item', label: 'Selecionar Produto', type: 'product_select', key: 'item' },
-                    { id: 'f-qtdEstoque', label: 'Quantidade a retirar do estoque', type: 'number', key: 'qtdEstoque' },
+                    { id: 'f-qtd', label: 'Quantidade', type: 'number', key: 'qtd' },
                     { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' },
                     { id: 'f-img', label: 'Foto de Referência', type: 'file', key: 'img' }
                 ]
@@ -615,7 +614,7 @@
             def.fields.forEach(f => {
                 let val = item && item[f.key] !== undefined ? item[f.key] : '';
                 if (f.key === 'data' && !val) val = new Date().toISOString().split('T')[0];
-                if (type === 'custo' && f.key === 'valorHora' && !val) val = state.config.valorHoraGlobal;
+                if (f.key === 'qtd' && !val && type === 'pedido') val = 1;
 
                 html += `<div class="mb-4"><label class="block text-xs font-bold text-stone-500 mb-1">${f.label}</label>`;
 
@@ -663,7 +662,7 @@
             document.getElementById('overlay-form').classList.add('hidden');
         }
 
-        // --- COMPRESSÃO AUTOMÁTICA DE IMAGEM (EVITA ESTOURO DE ESPAÇO) ---
+        // --- COMPRESSÃO AUTOMÁTICA DE IMAGEM ---
         function handleImageUpload(event, previewId) {
             const file = event.target.files[0];
             if (file) {
@@ -694,7 +693,6 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // Converte para JPEG com 70% de qualidade (leve e compacto)
                         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
                         document.getElementById(previewId).src = compressedDataUrl;
@@ -757,7 +755,8 @@
                 ${p.img ? `<img src="${p.img}" class="w-full h-48 rounded-2xl object-cover border border-stone-200 shadow-sm">` : ''}
                 <div>
                     <h2 class="text-xl font-bold text-stone-900 mb-1">${p.item}</h2>
-                    <p class="text-sm text-stone-600 mb-3">Cliente: <b>${p.cliente}</b></p>
+                    <p class="text-sm text-stone-600 mb-1">Cliente: <b>${p.cliente}</b></p>
+                    <p class="text-sm text-stone-600 mb-3">Quantidade: <b>${p.qtd || 1}</b></p>
                     <div class="flex gap-2 items-center mb-4">
                         <span class="text-xs font-bold px-3 py-1 rounded-full ${statusBg}">${p.status}</span>
                         <span class="text-base font-heading font-bold text-brand">R$ ${Number(p.valor||0).toFixed(2).replace('.',',')}</span>
@@ -846,7 +845,11 @@
         function closeProductModal() { document.getElementById('overlay-product').classList.add('hidden'); }
         function editProductFromDetail() { closeProductModal(); openForm('produto', state.currentProductViewId); }
         function deleteProductFromDetail() {
-            if(!confirm('Tem certeza que deseja excluir este produto?')) return;
+            if(!confirm('Tem certeza que deseja excluir este produto? (Isso também o removerá do estoque)')) return;
+            const pr = state.produtos.find(i => i.id === state.currentProductViewId);
+            if (pr) {
+                state.estoque = state.estoque.filter(e => e.item !== pr.nome);
+            }
             state.produtos = state.produtos.filter(i => i.id !== state.currentProductViewId);
             saveState();
             closeProductModal();
@@ -896,15 +899,34 @@
                 if (editingId) state.produtos[state.produtos.findIndex(i => i.id === editingId)] = newData;
                 else state.produtos.push(newData);
                 navigate('produtos');
+            } else if (type === 'estoque') {
+                if (!newData.qtd || newData.qtd < 1) newData.qtd = 1;
+                if (editingId) {
+                    state.estoque[state.estoque.findIndex(i => i.id === editingId)] = newData;
+                } else {
+                    const existingIndex = state.estoque.findIndex(e => e.item === newData.item);
+                    if (existingIndex !== -1) {
+                        let currentQtd = parseFloat(state.estoque[existingIndex].qtd) || 0;
+                        let addedQtd = parseFloat(newData.qtd) || 0;
+                        state.estoque[existingIndex].qtd = currentQtd + addedQtd;
+                        if (newData.obs) state.estoque[existingIndex].obs = newData.obs;
+                        if (newData.img) state.estoque[existingIndex].img = newData.img;
+                    } else {
+                        state.estoque.push(newData);
+                    }
+                }
+                navigate('estoque');
             } else if (type === 'pedido') {
+                if (!newData.qtd || newData.qtd < 1) newData.qtd = 1;
                 const prod = state.produtos.find(p => p.nome === newData.item);
-                newData.valor = prod ? Number(prod.preco || 0) : 0;
+                const unitPrice = prod ? Number(prod.preco || 0) : 0;
+                newData.valor = unitPrice * newData.qtd;
 
-                if (newData.venderEstoque && newData.qtdEstoque > 0) {
+                if (newData.venderEstoque && newData.qtd > 0) {
                     const stockItem = state.estoque.find(e => e.item === newData.item);
                     if (stockItem) {
                         let atual = parseFloat(stockItem.qtd) || 0;
-                        stockItem.qtd = Math.max(0, atual - parseFloat(newData.qtdEstoque));
+                        stockItem.qtd = Math.max(0, atual - parseFloat(newData.qtd));
                     }
                 }
 
@@ -920,7 +942,7 @@
                 else state.custos.push(newData);
                 navigate('custos');
             } else {
-                const targetArray = type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : type + 's');
+                const targetArray = type === 'financeiro' ? 'financeiro' : type + 's';
                 if (editingId) state[targetArray][state[targetArray].findIndex(i => i.id === editingId)] = newData;
                 else state[targetArray].push(newData);
 
@@ -937,8 +959,16 @@
         function deleteCurrentItem() {
             if(!confirm('Tem certeza que deseja excluir?')) return;
             const { type, editingId } = state.formState;
-            const targetArray = type === 'pedido' ? 'pedidos' : (type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'custo' ? 'custos' : (type === 'produto' ? 'produtos' : (type === 'receita' ? 'receitas' : type + 's')))));
-            state[targetArray] = state[targetArray].filter(i => i.id !== editingId);
+            if (type === 'produto') {
+                const pr = state.produtos.find(i => i.id === editingId);
+                if (pr) {
+                    state.estoque = state.estoque.filter(e => e.item !== pr.nome);
+                }
+                state.produtos = state.produtos.filter(i => i.id !== editingId);
+            } else {
+                const targetArray = type === 'pedido' ? 'pedidos' : (type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'custo' ? 'custos' : (type === 'receita' ? 'receitas' : type + 's'))));
+                state[targetArray] = state[targetArray].filter(i => i.id !== editingId);
+            }
             saveState();
             closeAllModals();
             render();
