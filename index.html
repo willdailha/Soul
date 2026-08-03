@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SOUL - Gestão de Ateliê</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Manrope', 'sans-serif'] },
+                    colors: { brand: { light: '#F4E3E1', DEFAULT: '#A84A5C', dark: '#8A3A4C', accent: '#E5D0CB' }, bg: '#FDFDFB' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #e5e5e5; }
+        .app-shell { background-color: #FDFDFB; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { scrollbar-width: none; }
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="flex justify-center min-h-screen relative">
+
+    <!-- App Shell -->
+    <div class="app-shell w-full max-w-md min-h-screen relative shadow-2xl overflow-x-hidden flex flex-col">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between px-5 pt-6 pb-3 sticky top-0 bg-[#FDFDFB] z-10 border-b border-stone-100">
+            <div class="flex items-center gap-3">
+                <button onclick="openForm('perfil')" class="w-11 h-11 rounded-full overflow-hidden bg-brand-accent flex items-center justify-center active:scale-95 transition-transform border border-stone-200">
+                    <img id="header-avatar" src="https://ui-avatars.com/api/?name=SOUL&background=E5D0CB&color=A84A5C" alt="Avatar" class="w-full h-full object-cover">
+                </button>
+                <div class="leading-tight cursor-pointer" onclick="openForm('perfil')">
+                    <h1 id="header-atelier" class="font-heading text-lg font-bold text-stone-900">SOUL</h1>
+                    <p id="header-artesao" class="text-xs text-stone-500">William</p>
+                </div>
+            </div>
+            <button onclick="openForm('perfil')" class="p-2 text-stone-400 bg-stone-50 rounded-full active:scale-95"><i data-lucide="settings" class="w-5 h-5"></i></button>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="app-content" class="flex-1 overflow-y-auto no-scrollbar pb-24"></main>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-stone-200 pb-safe pt-2 px-2 flex items-center justify-around z-40">
+            <button onclick="navigate('home')" class="nav-btn flex flex-col items-center gap-1 py-2 px-3 text-[10px] font-medium text-brand" data-target="home"><i data-lucide="house" class="w-6 h-6"></i><span>Início</span></button>
+            <button onclick="navigate('pedidos')" class="nav-btn flex flex-col items-center gap-1 py-2 px-3 text-[10px] font-medium text-stone-400" data-target="pedidos"><i data-lucide="box" class="w-6 h-6"></i><span>Pedidos</span></button>
+            <button onclick="toggleActionSheet(event)" class="w-14 h-14 -mt-8 rounded-full bg-brand text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform border-4 border-white"><i data-lucide="plus" class="w-6 h-6"></i></button>
+            <button onclick="navigate('estoque')" class="nav-btn flex flex-col items-center gap-1 py-2 px-3 text-[10px] font-medium text-stone-400" data-target="estoque"><i data-lucide="package" class="w-6 h-6"></i><span>Estoque</span></button>
+            <button onclick="navigate('receitas')" class="nav-btn flex flex-col items-center gap-1 py-2 px-3 text-[10px] font-medium text-stone-400" data-target="receitas"><i data-lucide="book-open" class="w-6 h-6"></i><span>Receitas</span></button>
+        </nav>
+    </div>
+
+    <!-- OVERLAY 1: Action Sheet -->
+    <div id="overlay-action" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end justify-center pb-safe">
+        <div id="modal-action-sheet" class="bg-white w-full max-w-md rounded-t-[28px] p-6 shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-heading text-lg font-bold">O que adicionar?</h3>
+                <button onclick="closeActionSheet()" class="p-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pb-6">
+                <button onclick="selectAction('pedido')" class="bg-stone-50 rounded-2xl p-4 flex flex-col items-center gap-2 border border-stone-100 active:scale-95 transition-transform"><div class="w-10 h-10 rounded-full bg-brand-light text-brand flex items-center justify-center"><i data-lucide="box" class="w-5 h-5"></i></div><span class="text-sm font-semibold">Novo Pedido</span></button>
+                <button onclick="selectAction('financeiro')" class="bg-stone-50 rounded-2xl p-4 flex flex-col items-center gap-2 border border-stone-100 active:scale-95 transition-transform"><div class="w-10 h-10 rounded-full bg-[#E4E9E1] text-[#54624D] flex items-center justify-center"><i data-lucide="wallet" class="w-5 h-5"></i></div><span class="text-sm font-semibold">Lançamento</span></button>
+                <button onclick="selectAction('receita')" class="bg-stone-50 rounded-2xl p-4 flex flex-col items-center gap-2 border border-stone-100 active:scale-95 transition-transform"><div class="w-10 h-10 rounded-full bg-[#EBE9DE] text-[#8A7A3F] flex items-center justify-center"><i data-lucide="book-open" class="w-5 h-5"></i></div><span class="text-sm font-semibold">Nova Receita</span></button>
+                <button onclick="selectAction('estoque')" class="bg-stone-50 rounded-2xl p-4 flex flex-col items-center gap-2 border border-stone-100 active:scale-95 transition-transform"><div class="w-10 h-10 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center"><i data-lucide="package" class="w-5 h-5"></i></div><span class="text-sm font-semibold">Item Estoque</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY 2: Formulário Centralizado -->
+    <div id="overlay-form" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div id="modal-form" class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 id="form-title" class="font-heading text-lg font-bold">Formulário</h3>
+                <button onclick="closeFormModal()" class="p-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            
+            <div id="form-body" class="overflow-y-auto no-scrollbar flex-1 pb-4 space-y-4"></div>
+            
+            <div class="mt-4 flex gap-2 shrink-0 border-t border-stone-100 pt-4">
+                <button id="btn-delete" onclick="deleteCurrentItem()" class="hidden bg-red-100 text-red-600 px-4 rounded-xl font-bold active:scale-95 transition-transform"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                <button onclick="submitForm()" class="flex-1 bg-brand text-white font-semibold py-4 rounded-xl active:scale-95 transition-transform">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY 3: Visualizador de Receita Detalhada -->
+    <div id="overlay-recipe" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 class="font-heading text-lg font-bold">Detalhes da Receita</h3>
+                <button onclick="closeRecipeModal()" class="p-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="recipe-detail-body" class="overflow-y-auto no-scrollbar flex-1 pb-4 space-y-4"></div>
+            <div class="mt-4 flex gap-2 shrink-0 border-t border-stone-100 pt-4">
+                <button onclick="deleteRecipeFromDetail()" class="bg-red-100 text-red-600 px-4 rounded-xl font-bold active:scale-95 transition-transform"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                <button onclick="editRecipeFromDetail()" class="flex-1 bg-stone-100 text-stone-800 font-semibold py-3 rounded-xl active:scale-95 transition-transform">Editar</button>
+                <button onclick="closeRecipeModal()" class="flex-1 bg-brand text-white font-semibold py-3 rounded-xl active:scale-95 transition-transform">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY 4: Visualizador de Pedido Detalhado -->
+    <div id="overlay-order" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 class="font-heading text-lg font-bold">Detalhes do Pedido</h3>
+                <button onclick="closeOrderModal()" class="p-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="order-detail-body" class="overflow-y-auto no-scrollbar flex-1 pb-4 space-y-4"></div>
+            <div class="mt-4 flex gap-2 shrink-0 border-t border-stone-100 pt-4">
+                <button onclick="deleteOrderFromDetail()" class="bg-red-100 text-red-600 px-4 rounded-xl font-bold active:scale-95 transition-transform"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                <button onclick="editOrderFromDetail()" class="flex-1 bg-stone-100 text-stone-800 font-semibold py-3 rounded-xl active:scale-95 transition-transform">Editar</button>
+                <button onclick="closeOrderModal()" class="flex-1 bg-brand text-white font-semibold py-3 rounded-xl active:scale-95 transition-transform">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY 5: Visualizador de Estoque Detalhado -->
+    <div id="overlay-stock" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 class="font-heading text-lg font-bold">Detalhes do Item</h3>
+                <button onclick="closeStockModal()" class="p-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="stock-detail-body" class="overflow-y-auto no-scrollbar flex-1 pb-4 space-y-4"></div>
+            <div class="mt-4 flex gap-2 shrink-0 border-t border-stone-100 pt-4">
+                <button onclick="deleteStockFromDetail()" class="bg-red-100 text-red-600 px-4 rounded-xl font-bold active:scale-95 transition-transform"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                <button onclick="editStockFromDetail()" class="flex-1 bg-stone-100 text-stone-800 font-semibold py-3 rounded-xl active:scale-95 transition-transform">Editar</button>
+                <button onclick="closeStockModal()" class="flex-1 bg-brand text-white font-semibold py-3 rounded-xl active:scale-95 transition-transform">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY 6: Visualizador de Insight Detalhado -->
+    <div id="overlay-insight" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 class="font-heading text-lg font-bold">Detalhes do Insight</h3>
+                <button onclick="closeInsightModal()" class="p-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="insight-detail-body" class="overflow-y-auto no-scrollbar flex-1 pb-4 space-y-4"></div>
+            <div class="mt-4 flex gap-2 shrink-0 border-t border-stone-100 pt-4">
+                <button onclick="deleteInsightFromDetail()" class="bg-red-100 text-red-600 px-4 rounded-xl font-bold active:scale-95 transition-transform"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                <button onclick="editInsightFromDetail()" class="flex-1 bg-stone-100 text-stone-800 font-semibold py-3 rounded-xl active:scale-95 transition-transform">Editar</button>
+                <button onclick="closeInsightModal()" class="flex-1 bg-brand text-white font-semibold py-3 rounded-xl active:scale-95 transition-transform">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO GLOBAL ---
+        const state = {
+            currentView: 'home',
+            config: { artisanName: 'William', atelierName: 'SOUL', avatar: '', metaMensal: 3000, valorHoraGlobal: 35.00 },
+            pedidos: [],
+            estoque: [],
+            receitas: [],
+            custos: [],
+            financeiro: [],
+            insights: [],
+            formState: { type: null, editingId: null, tempImage: null },
+            currentRecipeViewId: null,
+            currentOrderId: null,
+            currentStockId: null,
+            currentInsightId: null
+        };
+
+        // --- SISTEMA DE VIEWS ---
+        const views = {
+            home: () => {
+                const entregues = state.pedidos.filter(p => p.status === 'Entregue');
+                const faturado = entregues.reduce((acc, p) => acc + p.valor, 0);
+                const meta = state.config.metaMensal;
+                const pct = Math.min(Math.round((faturado / meta) * 100) || 0, 100);
+
+                return `
+                <div class="px-5 space-y-5 fade-in pt-2">
+                    <div>
+                        <h2 class="font-heading text-2xl font-bold text-stone-900 tracking-tight">Olá, ${state.config.artisanName}</h2>
+                        <p class="text-sm text-stone-500 mt-1">${entregues.length} pedidos entregues · R$ ${faturado.toFixed(2).replace('.',',')} faturados</p>
+                    </div>
+                    <button onclick="openForm('perfil')" class="w-full text-left bg-gradient-to-br from-[#A84A5C] to-[#8A3A4C] rounded-[28px] p-6 text-white shadow-lg active:scale-[0.99] transition-transform">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <p class="text-xs uppercase tracking-[0.15em] opacity-80 mb-1">Meta do mês (Entregas)</p>
+                                <p class="font-heading text-2xl font-bold">R$ ${faturado.toFixed(2).replace('.',',')} <span class="text-sm font-normal opacity-70"> / R$ ${meta.toFixed(2).replace('.',',')}</span></p>
+                            </div>
+                            <span class="text-xs font-medium bg-white/20 px-3 py-1.5 rounded-full">${pct}%</span>
+                        </div>
+                        <div class="h-2 bg-white/25 rounded-full overflow-hidden">
+                            <div class="h-full bg-white rounded-full transition-all duration-500" style="width: ${pct}%;"></div>
+                        </div>
+                        <p class="text-xs opacity-80 mt-3 text-center">Toque para editar Perfil & Meta</p>
+                    </button>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="navigate('pedidos')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#F4E3E1] text-[#A84A5C] flex items-center justify-center"><i data-lucide="package"></i></div><span class="font-bold text-sm text-stone-800">Pedidos</span></button>
+                        <button onclick="navigate('receitas')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#EBE9DE] text-[#8A7A3F] flex items-center justify-center"><i data-lucide="book-open"></i></div><span class="font-bold text-sm text-stone-800">Receitas</span></button>
+                        <button onclick="navigate('estoque')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#E4E9E1] text-[#54624D] flex items-center justify-center"><i data-lucide="box"></i></div><span class="font-bold text-sm text-stone-800">Estoque</span></button>
+                        <button onclick="navigate('custos')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#EFE2DE] text-[#B65D41] flex items-center justify-center"><i data-lucide="scale"></i></div><span class="font-bold text-sm text-stone-800">Pesos & Custos</span></button>
+                        <button onclick="navigate('financeiro')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#E4E9E1] text-[#54624D] flex items-center justify-center"><i data-lucide="wallet"></i></div><span class="font-bold text-sm text-stone-800">Financeiro</span></button>
+                        <button onclick="navigate('insights')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#F4E3E1] text-[#A84A5C] flex items-center justify-center"><i data-lucide="sparkles"></i></div><span class="font-bold text-sm text-stone-800">Insights</span></button>
+                    </div>
+                </div>`;
+            },
+            
+            pedidos: () => generateListHTML('Pedidos', state.pedidos, (p) => {
+                let statusBg = 'bg-stone-100 text-stone-600';
+                if (p.status === 'Pendente') statusBg = 'bg-red-100 text-red-600';
+                else if (p.status === 'Em Produção') statusBg = 'bg-amber-100 text-amber-700';
+                else if (p.status === 'Entregue') statusBg = 'bg-green-100 text-green-600';
+
+                return `
+                <div class="flex gap-4 cursor-pointer items-center" onclick="openOrderDetail(${p.id})">
+                    ${p.img ? `<img src="${p.img}" class="w-20 h-20 rounded-xl object-cover shrink-0">` : `<div class="w-20 h-20 rounded-xl bg-stone-100 flex items-center justify-center text-stone-300 shrink-0"><i data-lucide="image"></i></div>`}
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-stone-800 truncate">${p.item}</h4>
+                        </div>
+                        <p class="text-xs text-stone-500 mb-1">Cliente: ${p.cliente}</p>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${statusBg}">${p.status}</span>
+                        <p class="text-sm font-bold text-brand mt-1">R$ ${p.valor.toFixed(2).replace('.',',')}</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); openForm('pedido', ${p.id})" class="text-stone-400 p-2 active:scale-95 shrink-0"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                </div>`;
+            }),
+
+            estoque: () => generateListHTML('Estoque', state.estoque, (e) => `
+                <div class="flex gap-4 items-center cursor-pointer" onclick="openStockDetail(${e.id})">
+                    ${e.img ? `<img src="${e.img}" class="w-14 h-14 rounded-xl object-cover shrink-0">` : `<div class="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center text-stone-300 shrink-0"><i data-lucide="package"></i></div>`}
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-stone-800 truncate">${e.item}</h4>
+                        <p class="text-xs text-stone-500">Qtd: <span class="font-bold text-stone-700">${e.qtd}</span></p>
+                    </div>
+                    <button onclick="event.stopPropagation(); openForm('estoque', ${e.id})" class="text-stone-400 p-2 active:scale-95 shrink-0"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                </div>
+            `),
+
+            receitas: () => generateListHTML('Receitas', state.receitas, (r) => `
+                <div class="flex gap-4 cursor-pointer items-center" onclick="openRecipeDetail(${r.id})">
+                    ${r.img ? `<img src="${r.img}" class="w-16 h-16 rounded-xl object-cover shrink-0">` : `<div class="w-16 h-16 rounded-xl bg-stone-100 flex items-center justify-center text-stone-300 shrink-0"><i data-lucide="book-open"></i></div>`}
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-stone-800 truncate">${r.nome}</h4>
+                        <p class="text-xs text-stone-500">Agulha: ${r.agulha} | Fio: ${r.fio}</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); openForm('receita', ${r.id})" class="text-stone-400 p-2 active:scale-95 shrink-0"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                </div>
+            `),
+
+            custos: () => `
+                <div class="px-5 space-y-6 fade-in pt-2">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-heading text-2xl font-bold text-stone-900">Pesos & Custos</h2>
+                        <button onclick="openForm('custo')" class="bg-brand text-white px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95">+ Calcular</button>
+                    </div>
+                    ${state.custos.map(c => `
+                        <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative">
+                            <button onclick="openForm('custo', ${c.id})" class="absolute top-4 right-4 text-stone-400 active:scale-95"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <h4 class="font-bold text-stone-800 mb-3">${c.nome}</h4>
+                            <div class="space-y-1 text-xs text-stone-500 mb-3 pb-3 border-b border-stone-100">
+                                <div class="flex justify-between"><span>Material (${c.pesoGasto}g)</span><span>R$ ${c.custoFio.toFixed(2).replace('.', ',')}</span></div>
+                                <div class="flex justify-between"><span>Custos Extras (Caixa/Etiqueta)</span><span>R$ ${c.extras.toFixed(2).replace('.', ',')}</span></div>
+                                <div class="flex justify-between"><span>Mão de Obra (${c.horas}h x R$${c.valorHora})</span><span>R$ ${(c.horas*c.valorHora).toFixed(2).replace('.', ',')}</span></div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold uppercase">Custo Total da Peça</span>
+                                <span class="text-lg font-heading font-bold text-brand">R$ ${c.custoTotal.toFixed(2).replace('.', ',')}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                    ${state.custos.length === 0 ? '<p class="text-center text-sm text-stone-400 py-10">Nenhum custo calculado.</p>' : ''}
+                </div>
+            `,
+
+            financeiro: () => {
+                let entradas = 0; let saidas = 0;
+                state.financeiro.forEach(t => { if (t.tipo === 'Entrada') entradas += t.valor; else saidas += t.valor; });
+                const saldo = entradas - saidas;
+
+                return `
+                <div class="px-5 space-y-6 fade-in pt-2">
+                    <h2 class="font-heading text-2xl font-bold text-stone-900">Financeiro</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="col-span-2 ${saldo >= 0 ? 'bg-green-50' : 'bg-red-50'} rounded-[24px] p-6 text-center">
+                            <p class="text-xs font-medium text-stone-500 uppercase">Saldo Líquido</p>
+                            <h3 class="text-3xl font-bold ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}">R$ ${saldo.toFixed(2).replace('.',',')}</h3>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
+                            <span class="text-xs font-medium text-stone-500"><i data-lucide="trending-up" class="inline w-3 h-3 text-green-500 mr-1"></i>Entradas</span>
+                            <p class="text-lg font-bold">R$ ${entradas.toFixed(2).replace('.',',')}</p>
+                        </div>
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
+                            <span class="text-xs font-medium text-stone-500"><i data-lucide="trending-down" class="inline w-3 h-3 text-red-500 mr-1"></i>Saídas</span>
+                            <p class="text-lg font-bold">R$ ${saidas.toFixed(2).replace('.',',')}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-end mb-4"><h3 class="font-bold">Movimentações</h3></div>
+                        ${state.financeiro.slice().reverse().map(t => {
+                            const isEntrada = t.tipo === 'Entrada';
+                            return `
+                            <div class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 cursor-pointer active:scale-95 transition-transform border border-stone-100" onclick="openForm('financeiro', ${t.id})">
+                                <div class="flex gap-3">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center ${isEntrada ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}"><i data-lucide="${isEntrada ? 'arrow-up-right' : 'arrow-down-right'}" class="w-5 h-5"></i></div>
+                                    <div><p class="text-sm font-bold text-stone-800">${t.categoria}</p><p class="text-xs text-stone-500 truncate w-32">${t.desc}</p></div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold ${isEntrada ? 'text-green-600' : 'text-stone-800'}">${isEntrada ? '+' : '-'} R$ ${t.valor.toFixed(2).replace('.', ',')}</p>
+                                    <p class="text-[10px] text-stone-400">${t.data.split('-').reverse().join('/')}</p>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            },
+
+            insights: () => {
+                let html = `
+                    <div class="px-5 space-y-4 fade-in pt-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="font-heading text-2xl font-bold text-stone-900">Insights & Ideias</h2>
+                            <button onclick="openForm('insight')" class="bg-brand text-white px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95">+ Novo</button>
+                        </div>
+                `;
+                if (state.insights.length === 0) {
+                    html += `<p class="text-center text-sm text-stone-400 py-10">Nenhum insight cadastrado.</p>`;
+                } else {
+                    state.insights.forEach(i => {
+                        html += `
+                            <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm mb-3 cursor-pointer active:scale-95 transition-transform" onclick="openInsightDetail(${i.id})">
+                                <div class="flex gap-4 items-start">
+                                    ${i.img ? `<img src="${i.img}" class="w-16 h-16 rounded-xl object-cover shrink-0">` : `<div class="w-16 h-16 rounded-xl bg-stone-100 flex items-center justify-center text-stone-300 shrink-0"><i data-lucide="sparkles"></i></div>`}
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-start">
+                                            <h4 class="font-bold text-stone-800 truncate">${i.titulo}</h4>
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-light text-brand shrink-0 ml-2">${i.tipo}</span>
+                                        </div>
+                                        ${i.desc ? `<p class="text-xs text-stone-500 mt-1 line-clamp-2">${i.desc}</p>` : ''}
+                                        ${i.link ? `<p class="text-xs text-blue-600 mt-1 truncate"><i data-lucide="link" class="inline w-3 h-3 mr-1"></i>${i.link}</p>` : ''}
+                                    </div>
+                                    <button onclick="event.stopPropagation(); openForm('insight', ${i.id})" class="text-stone-400 p-2 active:scale-95 shrink-0"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                html += `</div>`;
+                return html;
+            }
+        };
+
+        function generateListHTML(title, array, renderItem) {
+            return `
+                <div class="px-5 space-y-4 fade-in pt-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="font-heading text-2xl font-bold text-stone-900">${title}</h2>
+                    </div>
+                    ${array.length === 0 ? `<p class="text-center text-sm text-stone-400 py-10">Nenhum item cadastrado.</p>` : ''}
+                    ${array.map(item => `<div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm">${renderItem(item)}</div>`).join('')}
+                </div>
+            `;
+        }
+
+        // --- NAVEGAÇÃO E RENDER ---
+        function render() {
+            const contentDiv = document.getElementById('app-content');
+            if(contentDiv) {
+                contentDiv.innerHTML = views[state.currentView]();
+                updateHeader();
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    const isActive = btn.dataset.target === state.currentView;
+                    btn.classList.toggle('text-brand', isActive);
+                    btn.classList.toggle('text-stone-400', !isActive);
+                });
+                lucide.createIcons();
+            }
+        }
+
+        function updateHeader() {
+            document.getElementById('header-atelier').innerText = state.config.atelierName || 'SOUL';
+            document.getElementById('header-artesao').innerText = state.config.artisanName || 'Artesão';
+            if (state.config.avatar) document.getElementById('header-avatar').src = state.config.avatar;
+        }
+
+        function navigate(view) { 
+            state.currentView = view; 
+            closeAllModals(); 
+            render(); 
+        }
+
+        // --- DEFINIÇÃO DOS FORMULÁRIOS ---
+        const formDefinitions = {
+            perfil: {
+                title: 'Editar Perfil & Metas',
+                fields: [
+                    { id: 'f-art', label: 'Nome do Artesão', type: 'text', key: 'artisanName' },
+                    { id: 'f-ate', label: 'Nome do Ateliê', type: 'text', key: 'atelierName' },
+                    { id: 'f-meta', label: 'Meta Mensal (R$)', type: 'number', key: 'metaMensal' },
+                    { id: 'f-hora', label: 'Sua Mão de Obra (R$/hora)', type: 'number', key: 'valorHoraGlobal' },
+                    { id: 'f-img', label: 'Foto de Perfil', type: 'file', key: 'avatar' }
+                ]
+            },
+            pedido: {
+                title: 'Pedido',
+                fields: [
+                    { id: 'f-cli', label: 'Nome do Cliente', type: 'text', key: 'cliente' },
+                    { id: 'f-item', label: 'Peça Encomendada', type: 'text', key: 'item' },
+                    { id: 'f-valor', label: 'Valor Final (R$)', type: 'number', key: 'valor' },
+                    { id: 'f-status', label: 'Status', type: 'select', options: ['Pendente', 'Em Produção', 'Entregue'], key: 'status' },
+                    { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' },
+                    { id: 'f-img', label: 'Foto de Referência', type: 'file', key: 'img' }
+                ]
+            },
+            estoque: {
+                title: 'Item de Estoque',
+                fields: [
+                    { id: 'f-item', label: 'Material (Fio, Etiqueta, etc)', type: 'text', key: 'item' },
+                    { id: 'f-qtd', label: 'Quantidade (Ex: 3 rolos, 50g)', type: 'text', key: 'qtd' },
+                    { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' },
+                    { id: 'f-img', label: 'Foto', type: 'file', key: 'img' }
+                ]
+            },
+            receita: {
+                title: 'Receita',
+                fields: [
+                    { id: 'f-nome', label: 'Nome da Peça', type: 'text', key: 'nome' },
+                    { id: 'f-fio', label: 'Fio Utilizado', type: 'text', key: 'fio' },
+                    { id: 'f-agulha', label: 'Agulha(s)', type: 'text', key: 'agulha' },
+                    { id: 'f-desc', label: 'Passo a passo / Anotações', type: 'textarea', key: 'desc' },
+                    { id: 'f-img', label: 'Foto da Peça Final', type: 'file', key: 'img' }
+                ]
+            },
+            financeiro: {
+                title: 'Lançamento',
+                fields: [
+                    { id: 'f-tipo', label: 'Tipo', type: 'select', options: ['Entrada', 'Saída'], key: 'tipo' },
+                    { id: 'f-cat', label: 'Categoria', type: 'select', options: ['Venda de Peça', 'Matéria-prima', 'Embalagens/Aviamentos', 'Ferramentas', 'Frete', 'Outros'], key: 'categoria' },
+                    { id: 'f-desc', label: 'Descrição', type: 'text', key: 'desc' },
+                    { id: 'f-valor', label: 'Valor (R$)', type: 'number', key: 'valor' },
+                    { id: 'f-data', label: 'Data', type: 'date', key: 'data' }
+                ]
+            },
+            insight: {
+                title: 'Insight / Ideia',
+                fields: [
+                    { id: 'f-titulo', label: 'Título / Assunto', type: 'text', key: 'titulo' },
+                    { id: 'f-tipo', label: 'Categoria', type: 'select', options: ['Ideia', 'Link de Inspiração', 'Foto / Moodboard'], key: 'tipo' },
+                    { id: 'f-link', label: 'Link (URL)', type: 'text', key: 'link' },
+                    { id: 'f-desc', label: 'Anotações / Descrição', type: 'textarea', key: 'desc' },
+                    { id: 'f-img', label: 'Foto', type: 'file', key: 'img' },
+                    { id: 'f-legenda', label: 'Legenda da Foto', type: 'text', key: 'legenda' }
+                ]
+            },
+            custo: {
+                title: 'Calculadora de Custos',
+                fields: [
+                    { id: 'c-nome', label: 'Nome da Peça', type: 'text', key: 'nome' },
+                    { id: 'c-precoRolo', label: 'Preço Pago no Rolo (R$)', type: 'number', key: 'precoRolo' },
+                    { id: 'c-pesoRolo', label: 'Peso Total do Rolo (gramas)', type: 'number', key: 'pesoRolo' },
+                    { id: 'c-pesoGasto', label: 'Peso Gasto na Peça (gramas)', type: 'number', key: 'pesoGasto' },
+                    { id: 'c-extras', label: 'Custos Extras (Caixa, Etiqueta) (R$)', type: 'number', key: 'extras' },
+                    { id: 'c-horas', label: 'Tempo de Trabalho (Horas)', type: 'number', key: 'horas' },
+                    { id: 'c-valorHora', label: 'Valor da Hora (R$)', type: 'number', key: 'valorHora' }
+                ]
+            }
+        };
+
+        // --- CONTROLE DE MODAIS ---
+        function toggleActionSheet(event) {
+            if(event) event.stopPropagation();
+            const overlay = document.getElementById('overlay-action');
+            const isOpen = !overlay.classList.contains('hidden');
+
+            if (isOpen) {
+                closeAllModals();
+            } else {
+                closeAllModals();
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        function closeActionSheet() {
+            document.getElementById('overlay-action').classList.add('hidden');
+        }
+
+        function selectAction(type) {
+            closeActionSheet();
+            openForm(type);
+        }
+
+        function openForm(type, id = null) {
+            closeAllModals();
+            
+            state.formState = { type, editingId: id, tempImage: null };
+            const def = formDefinitions[type];
+            document.getElementById('form-title').innerText = id ? 'Editar ' + def.title : (type==='perfil' ? def.title : 'Novo(a) ' + def.title);
+            
+            let item = {};
+            if (type === 'perfil') item = state.config;
+            else if (id) {
+                const arr = type === 'financeiro' ? state.financeiro : (type === 'estoque' ? state.estoque : (type === 'custo' ? state.custos : (type === 'insight' ? state.insights : state[type + 's'])));
+                item = arr.find(i => i.id === id);
+            }
+
+            let html = '';
+            def.fields.forEach(f => {
+                let val = item && item[f.key] !== undefined ? item[f.key] : '';
+                if (f.key === 'data' && !val) val = new Date().toISOString().split('T')[0];
+                if (type === 'custo' && f.key === 'valorHora' && !val) val = state.config.valorHoraGlobal;
+                if (type === 'financeiro' && f.key === 'tipo' && !val) val = 'Entrada';
+
+                html += `<div class="mb-4"><label class="block text-xs font-bold text-stone-500 mb-1">${f.label}</label>`;
+                
+                if (f.type === 'textarea') html += `<textarea id="${f.id}" rows="4" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">${val}</textarea>`;
+                else if (f.type === 'select') html += `<select id="${f.id}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">${f.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>`;
+                else if (f.type === 'file') {
+                    html += `
+                        <div class="flex items-center gap-3">
+                            ${val ? `<img id="${f.id}-preview" src="${val}" class="w-16 h-16 rounded-lg object-cover border border-stone-200 shadow-sm">` : `<img id="${f.id}-preview" class="w-16 h-16 rounded-lg object-cover hidden border border-stone-200 shadow-sm">`}
+                            <input type="file" accept="image/*" onchange="handleImageUpload(event, '${f.id}-preview')" class="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-light file:text-brand hover:file:bg-brand-accent transition-colors">
+                        </div>`;
+                    if (val) state.formState.tempImage = val;
+                }
+                else html += `<input type="${f.type}" id="${f.id}" value="${val}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">`;
+                html += `</div>`;
+            });
+
+            document.getElementById('form-body').innerHTML = html;
+            document.getElementById('btn-delete').classList.toggle('hidden', !id);
+
+            document.getElementById('overlay-form').classList.remove('hidden');
+        }
+
+        function closeFormModal() {
+            document.getElementById('overlay-form').classList.add('hidden');
+        }
+
+        // --- CONTROLE DE VISUALIZAÇÃO DE RECEITAS ---
+        function openRecipeDetail(id) {
+            closeAllModals();
+            state.currentRecipeViewId = id;
+            const r = state.receitas.find(item => item.id === id);
+            if (!r) return;
+
+            let html = `
+                ${r.img ? `<img src="${r.img}" class="w-full h-48 rounded-2xl object-cover border border-stone-200 shadow-sm">` : ''}
+                <div>
+                    <h2 class="text-xl font-bold text-stone-900 mb-2">${r.nome}</h2>
+                    <div class="flex gap-2 text-xs text-stone-600 mb-4">
+                        <span class="bg-stone-100 px-3 py-1.5 rounded-xl">Fio: <b>${r.fio}</b></span>
+                        <span class="bg-stone-100 px-3 py-1.5 rounded-xl">Agulha: <b>${r.agulha}</b></span>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Passo a passo / Anotações</h4>
+                    <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${r.desc || 'Nenhum passo a passo cadastrado.'}</div>
+                </div>
+            `;
+            document.getElementById('recipe-detail-body').innerHTML = html;
+            document.getElementById('overlay-recipe').classList.remove('hidden');
+        }
+        function closeRecipeModal() { document.getElementById('overlay-recipe').classList.add('hidden'); }
+        function editRecipeFromDetail() { closeRecipeModal(); openForm('receita', state.currentRecipeViewId); }
+        function deleteRecipeFromDetail() {
+            if(!confirm('Tem certeza que deseja excluir esta receita?')) return;
+            state.receitas = state.receitas.filter(i => i.id !== state.currentRecipeViewId);
+            closeRecipeModal();
+            render();
+        }
+
+        // --- CONTROLE DE VISUALIZAÇÃO DE PEDIDOS ---
+        function openOrderDetail(id) {
+            closeAllModals();
+            state.currentOrderId = id;
+            const p = state.pedidos.find(item => item.id === id);
+            if (!p) return;
+
+            let statusBg = 'bg-stone-100 text-stone-600';
+            if (p.status === 'Pendente') statusBg = 'bg-red-100 text-red-600';
+            else if (p.status === 'Em Produção') statusBg = 'bg-amber-100 text-amber-700';
+            else if (p.status === 'Entregue') statusBg = 'bg-green-100 text-green-600';
+
+            let html = `
+                ${p.img ? `<img src="${p.img}" class="w-full h-48 rounded-2xl object-cover border border-stone-200 shadow-sm">` : ''}
+                <div>
+                    <h2 class="text-xl font-bold text-stone-900 mb-1">${p.item}</h2>
+                    <p class="text-sm text-stone-600 mb-3">Cliente: <b>${p.cliente}</b></p>
+                    <div class="flex gap-2 items-center mb-4">
+                        <span class="text-xs font-bold px-3 py-1 rounded-full ${statusBg}">${p.status}</span>
+                        <span class="text-base font-heading font-bold text-brand">R$ ${p.valor.toFixed(2).replace('.',',')}</span>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Observações</h4>
+                    <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${p.obs || 'Nenhuma observação cadastrada.'}</div>
+                </div>
+            `;
+            document.getElementById('order-detail-body').innerHTML = html;
+            document.getElementById('overlay-order').classList.remove('hidden');
+        }
+        function closeOrderModal() { document.getElementById('overlay-order').classList.add('hidden'); }
+        function editOrderFromDetail() { closeOrderModal(); openForm('pedido', state.currentOrderId); }
+        function deleteOrderFromDetail() {
+            if(!confirm('Tem certeza que deseja excluir este pedido?')) return;
+            state.pedidos = state.pedidos.filter(i => i.id !== state.currentOrderId);
+            closeOrderModal();
+            render();
+        }
+
+        // --- CONTROLE DE VISUALIZAÇÃO DE ESTOQUE ---
+        function openStockDetail(id) {
+            closeAllModals();
+            state.currentStockId = id;
+            const e = state.estoque.find(item => item.id === id);
+            if (!e) return;
+
+            let html = `
+                ${e.img ? `<img src="${e.img}" class="w-full h-48 rounded-2xl object-cover border border-stone-200 shadow-sm">` : ''}
+                <div>
+                    <h2 class="text-xl font-bold text-stone-900 mb-1">${e.item}</h2>
+                    <p class="text-sm text-stone-600 mb-4">Quantidade: <b>${e.qtd}</b></p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Observações</h4>
+                    <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${e.obs || 'Nenhuma observação cadastrada.'}</div>
+                </div>
+            `;
+            document.getElementById('stock-detail-body').innerHTML = html;
+            document.getElementById('overlay-stock').classList.remove('hidden');
+        }
+        function closeStockModal() { document.getElementById('overlay-stock').classList.add('hidden'); }
+        function editStockFromDetail() { closeStockModal(); openForm('estoque', state.currentStockId); }
+        function deleteStockFromDetail() {
+            if(!confirm('Tem certeza que deseja excluir este item?')) return;
+            state.estoque = state.estoque.filter(i => i.id !== state.currentStockId);
+            closeStockModal();
+            render();
+        }
+
+        // --- CONTROLE DE VISUALIZAÇÃO DE INSIGHTS ---
+        function openInsightDetail(id) {
+            closeAllModals();
+            state.currentInsightId = id;
+            const i = state.insights.find(item => item.id === id);
+            if (!i) return;
+
+            let html = `
+                ${i.img ? `
+                    <div>
+                        <img src="${i.img}" class="w-full h-48 rounded-2xl object-cover border border-stone-200 shadow-sm">
+                        ${i.legenda ? `<p class="text-xs text-stone-500 mt-1.5 text-center italic">${i.legenda}</p>` : ''}
+                    </div>
+                ` : ''}
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h2 class="text-xl font-bold text-stone-900">${i.titulo}</h2>
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-brand-light text-brand">${i.tipo}</span>
+                    </div>
+                    ${i.link ? `<a href="${i.link}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-2 rounded-xl mb-3 hover:bg-blue-100 transition-colors w-full truncate"><i data-lucide="external-link" class="w-4 h-4 shrink-0"></i><span class="truncate">${i.link}</span></a>` : ''}
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Anotações / Descrição</h4>
+                    <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${i.desc || 'Nenhuma anotação cadastrada.'}</div>
+                </div>
+            `;
+            document.getElementById('insight-detail-body').innerHTML = html;
+            document.getElementById('overlay-insight').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeInsightModal() { document.getElementById('overlay-insight').classList.add('hidden'); }
+        function editInsightFromDetail() { closeInsightModal(); openForm('insight', state.currentInsightId); }
+        function deleteInsightFromDetail() {
+            if(!confirm('Tem certeza que deseja excluir este insight?')) return;
+            state.insights = state.insights.filter(i => i.id !== state.currentInsightId);
+            closeInsightModal();
+            render();
+        }
+
+        function closeAllModals() {
+            document.getElementById('overlay-action').classList.add('hidden');
+            document.getElementById('overlay-form').classList.add('hidden');
+            document.getElementById('overlay-recipe').classList.add('hidden');
+            document.getElementById('overlay-order').classList.add('hidden');
+            document.getElementById('overlay-stock').classList.add('hidden');
+            document.getElementById('overlay-insight').classList.add('hidden');
+        }
+
+        function handleImageUpload(event, previewId) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById(previewId).src = e.target.result;
+                    document.getElementById(previewId).classList.remove('hidden');
+                    state.formState.tempImage = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function submitForm() {
+            const { type, editingId, tempImage } = state.formState;
+            const def = formDefinitions[type];
+            let newData = { id: editingId || Date.now() };
+
+            def.fields.forEach(f => {
+                if (f.type === 'file') newData[f.key] = tempImage;
+                else {
+                    let val = document.getElementById(f.id).value;
+                    if (f.type === 'number') val = parseFloat(val) || 0;
+                    newData[f.key] = val;
+                }
+            });
+
+            if (type === 'perfil') {
+                state.config = { ...state.config, ...newData };
+            } else if (type === 'custo') {
+                const custoGrama = newData.precoRolo / newData.pesoRolo;
+                newData.custoFio = custoGrama * newData.pesoGasto;
+                newData.custoTotal = newData.custoFio + newData.extras + (newData.horas * newData.valorHora);
+                
+                if (editingId) state.custos[state.custos.findIndex(i => i.id === editingId)] = newData;
+                else state.custos.push(newData);
+                navigate('custos');
+            } else {
+                const targetArray = type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'insight' ? 'insights' : type + 's'));
+                if (editingId) state[targetArray][state[targetArray].findIndex(i => i.id === editingId)] = newData;
+                else state[targetArray].push(newData);
+                
+                if (!editingId && ['pedido', 'estoque', 'receita', 'financeiro', 'insight'].includes(type)) {
+                    navigate(type === 'estoque' ? 'estoque' : (type === 'financeiro' ? 'financeiro' : (type === 'insight' ? 'insights' : type + 's')));
+                }
+            }
+
+            closeAllModals();
+            render();
+        }
+
+        function deleteCurrentItem() {
+            if(!confirm('Tem certeza que deseja excluir?')) return;
+            const { type, editingId } = state.formState;
+            const targetArray = type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'custo' ? 'custos' : (type === 'insight' ? 'insights' : type + 's')));
+            state[targetArray] = state[targetArray].filter(i => i.id !== editingId);
+            closeAllModals();
+            render();
+        }
+
+        // Renderização imediata na carga do script e no DOMContentLoaded
+        render();
+        document.addEventListener('DOMContentLoaded', () => {
+            render();
+        });
+    </script>
+</body>
+</html>
