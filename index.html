@@ -501,29 +501,22 @@
                 indicator.className = "photo-checkbox-indicator absolute top-2 right-2 w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center shadow-sm transition-all";
                 icon.classList.remove('opacity-0');
             }
-            updateFloatingSelectionBar();
+            updateSelectionHeader();
         }
 
-        function updateFloatingSelectionBar() {
-            let bar = document.getElementById('floating-selection-bar');
+        function updateSelectionHeader() {
+            const headerContainer = document.getElementById('selection-header-action');
+            if (!headerContainer) return;
             const count = state.insightSelectedIds.length;
             if (count > 0) {
-                if (!bar) {
-                    const container = document.createElement('div');
-                    container.id = 'floating-selection-bar';
-                    container.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-md px-5 z-50 fade-in';
-                    container.innerHTML = `
-                        <button onclick="deleteSelectedInsightPhotos()" class="w-full bg-red-600 text-white py-3.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-2xl active:scale-95">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir Fotos Selecionadas (<span id="selected-count-num">${count}</span>)
-                        </button>
-                    `;
-                    document.body.appendChild(container);
-                    lucide.createIcons();
-                } else {
-                    document.getElementById('selected-count-num').innerText = count;
-                }
+                headerContainer.innerHTML = `
+                    <button onclick="deleteSelectedInsightPhotos()" class="bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 active:scale-95 shadow-sm animate-pulse">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Excluir (${count})
+                    </button>
+                `;
+                lucide.createIcons();
             } else {
-                if (bar) bar.remove();
+                headerContainer.innerHTML = '';
             }
         }
 
@@ -534,8 +527,6 @@
                     pasta.items = pasta.items.filter(i => !state.insightSelectedIds.includes(i.id));
                     state.insightSelectionMode = false;
                     state.insightSelectedIds = [];
-                    const bar = document.getElementById('floating-selection-bar');
-                    if (bar) bar.remove();
                     await saveState();
                     render();
                 }
@@ -693,7 +684,16 @@
                         ${fotos.length > 0 ? `
                             <div>
                                 <div class="flex justify-between items-center mb-3">
-                                    <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider">Galeria de Fotos (${fotos.length})</h3>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider">Galeria de Fotos (${fotos.length})</h3>
+                                        <div id="selection-header-action">
+                                            ${state.insightSelectedIds.length > 0 ? `
+                                                <button onclick="deleteSelectedInsightPhotos()" class="bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 active:scale-95 shadow-sm">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Excluir (${state.insightSelectedIds.length})
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
                                     <button onclick="toggleInsightSelectionMode()" class="text-xs font-bold ${state.insightSelectionMode ? 'text-brand bg-brand-light/40 px-2.5 py-1 rounded-lg' : 'text-stone-500 hover:text-stone-800'} transition-colors">
                                         ${state.insightSelectionMode ? 'Concluir' : 'Selecionar Várias'}
                                     </button>
@@ -942,8 +942,6 @@
             state.currentView = view; 
             state.insightSelectionMode = false;
             state.insightSelectedIds = [];
-            const bar = document.getElementById('floating-selection-bar');
-            if (bar) bar.remove();
             closeAllModals(); 
             render(); 
         }
@@ -951,8 +949,6 @@
             state.currentInsightFolderId = id; 
             state.insightSelectionMode = false;
             state.insightSelectedIds = [];
-            const bar = document.getElementById('floating-selection-bar');
-            if (bar) bar.remove();
             navigate('insight_folder'); 
         }
 
