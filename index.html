@@ -189,7 +189,7 @@
 
     <script>
         // --- ESTADO GLOBAL & LOCAL STORAGE ---
-        const STORAGE_KEY = 'soul_atelier_data_v14';
+        const STORAGE_KEY = 'soul_atelier_data_v15';
 
         const state = {
             currentView: 'home',
@@ -211,13 +211,16 @@
             insightSelectedIds: []
         };
 
+        // Variável global para armazenar temporariamente as fotos da pasta atual
+        let activeFolderPhotos = [];
+
         function saveState() {
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } 
             catch (e) { alert("Atenção: O armazenamento ficou cheio devido ao tamanho das fotos em alta resolução."); }
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v13', 'soul_atelier_data_v12', 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v14', 'soul_atelier_data_v13', 'soul_atelier_data_v12', 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -250,8 +253,8 @@
             document.getElementById('overlay-fullscreen-img').classList.remove('hidden');
         }
 
-        function openFolderGallery(imagesArray, startIndex) {
-            activeGalleryImages = imagesArray;
+        function openFolderGallery(startIndex) {
+            activeGalleryImages = activeFolderPhotos;
             activeGalleryIndex = startIndex;
             renderFullscreenGallery();
             document.getElementById('overlay-fullscreen-img').classList.remove('hidden');
@@ -313,7 +316,6 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             } catch(e) {
-                // Fallback direto
                 const a = document.createElement('a');
                 a.href = item.conteudo;
                 a.download = 'soul_foto.jpg';
@@ -609,6 +611,9 @@
                 const fotos = (pasta.items || []).filter(i => i.tipo !== 'link');
                 const links = (pasta.items || []).filter(i => i.tipo === 'link');
 
+                // Atualiza a referência global das fotos da pasta atual para uso seguro no visualizador
+                activeFolderPhotos = fotos;
+
                 return `
                 <div class="px-5 space-y-4 fade-in pt-2 pb-24">
                     <div class="flex justify-between items-center mb-6">
@@ -634,9 +639,10 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     ${fotos.map((item, idx) => {
                                         const isSelected = state.insightSelectedIds.includes(item.id);
+                                        const clickAction = state.insightSelectionMode ? `togglePhotoSelection(${item.id})` : `openFolderGallery(${idx})`;
                                         return `
                                             <div class="bg-white rounded-2xl p-2 border ${isSelected ? 'border-brand bg-brand-light/10 shadow-md ring-2 ring-brand/30' : 'border-stone-100 shadow-sm'} relative group overflow-hidden transition-all">
-                                                <div class="w-full h-36 bg-stone-100 rounded-xl overflow-hidden relative cursor-pointer" onclick="${state.insightSelectionMode ? `togglePhotoSelection(${item.id})` : `openFolderGallery(${JSON.stringify(fotos)}, ${idx})`}">
+                                                <div class="w-full h-36 bg-stone-100 rounded-xl overflow-hidden relative cursor-pointer" onclick="${clickAction}">
                                                     <img src="${item.conteudo}" class="w-full h-full object-cover" style="object-position: ${item.imgPosX||50}% ${item.imgPosY||50}%;">
                                                     ${state.insightSelectionMode ? `
                                                         <div class="absolute top-2 right-2 w-7 h-7 rounded-full ${isSelected ? 'bg-brand text-white' : 'bg-white/80 text-transparent border border-stone-300'} flex items-center justify-center shadow-sm transition-all">
@@ -1170,7 +1176,7 @@
 
             def.fields.forEach(f => {
                 if (f.type === 'file') newData[f.key] = tempImage;
-                else if (f.type === 'multiple_files') {} // Tratado abaixo
+                else if (f.type === 'multiple_files') {}
                 else if (f.type === 'dynamic_parts') newData[f.key] = tempPartes.filter(p => p.material || p.peso);
                 else if (f.type === 'checkbox') newData[f.key] = document.getElementById(f.id).checked;
                 else { let val = document.getElementById(f.id).value; if (f.type === 'number') val = parseFloat(val) || 0; newData[f.key] = val; }
