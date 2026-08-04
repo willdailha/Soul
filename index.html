@@ -64,11 +64,23 @@
         </nav>
     </div>
 
-    <!-- FULLSCREEN IMAGE VIEWER MODAL -->
-    <div id="overlay-fullscreen-img" class="fixed inset-0 bg-black/90 z-[70] hidden flex flex-col items-center justify-center p-4">
-        <button onclick="closeFullscreenImg()" class="absolute top-4 right-4 p-3 bg-white/20 text-white rounded-full active:scale-95"><i data-lucide="x" class="w-6 h-6"></i></button>
-        <img id="fullscreen-img-src" src="" class="max-w-full max-h-[75vh] object-contain rounded-xl mb-6 shadow-2xl">
-        <a id="fullscreen-download-btn" href="#" download="soul_foto.jpg" class="bg-brand text-white px-6 py-3.5 rounded-2xl font-bold text-xs flex items-center gap-2 active:scale-95 shadow-lg"><i data-lucide="download" class="w-4 h-4"></i> Baixar Foto no Aparelho</a>
+    <!-- FULLSCREEN IMAGE VIEWER MODAL (COM SUPORTE A SWIPE E NAVEGAÇÃO) -->
+    <div id="overlay-fullscreen-img" class="fixed inset-0 bg-black/95 z-[70] hidden flex flex-col items-center justify-between p-6">
+        <div class="w-full flex justify-between items-center z-10">
+            <span id="fullscreen-counter" class="text-white/70 text-xs font-semibold">1/1</span>
+            <button onclick="closeFullscreenImg()" class="p-3 bg-white/20 text-white rounded-full active:scale-95"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+
+        <div class="relative flex-1 w-full flex items-center justify-center my-2 select-none" id="fullscreen-swipe-area">
+            <button onclick="changeGalleryImage(-1)" id="btn-prev-img" class="absolute left-0 p-3 bg-white/10 text-white rounded-full active:scale-95 z-10 hover:bg-white/20"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+            <img id="fullscreen-img-src" src="" class="max-w-full max-h-[65vh] object-contain rounded-xl shadow-2xl transition-transform">
+            <button onclick="changeGalleryImage(1)" id="btn-next-img" class="absolute right-0 p-3 bg-white/10 text-white rounded-full active:scale-95 z-10 hover:bg-white/20"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+        </div>
+
+        <div class="w-full flex flex-col items-center gap-3 z-10">
+            <p id="fullscreen-title" class="text-white text-sm font-bold text-center truncate max-w-[280px]"></p>
+            <a id="fullscreen-download-btn" href="#" download="soul_foto.jpg" class="bg-brand text-white px-6 py-3.5 rounded-2xl font-bold text-xs flex items-center gap-2 active:scale-95 shadow-lg"><i data-lucide="download" class="w-4 h-4"></i> Baixar Foto no Aparelho</a>
+        </div>
     </div>
 
     <!-- OVERLAY: Formulário Centralizado -->
@@ -177,7 +189,7 @@
 
     <script>
         // --- ESTADO GLOBAL & LOCAL STORAGE ---
-        const STORAGE_KEY = 'soul_atelier_data_v10';
+        const STORAGE_KEY = 'soul_atelier_data_v11';
 
         const state = {
             currentView: 'home',
@@ -203,7 +215,7 @@
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -225,22 +237,93 @@
         }
         loadState();
 
-        // --- VISUALIZADOR DE IMAGEM EM TELA CHEIA & DOWNLOAD ---
+        // --- VISUALIZADOR DE IMAGEM EM TELA CHEIA (GALERIA COM SWIPE) ---
+        let activeGalleryImages = [];
+        let activeGalleryIndex = 0;
+
         function openFullscreenImg(src, title = 'soul_foto') {
-            if(!src) return;
-            const modal = document.getElementById('overlay-fullscreen-img');
+            activeGalleryImages = [{ conteudo: src, titulo: title }];
+            activeGalleryIndex = 0;
+            renderFullscreenGallery();
+            document.getElementById('overlay-fullscreen-img').classList.remove('hidden');
+        }
+
+        function openFolderGallery(imagesArray, startIndex) {
+            activeGalleryImages = imagesArray;
+            activeGalleryIndex = startIndex;
+            renderFullscreenGallery();
+            document.getElementById('overlay-fullscreen-img').classList.remove('hidden');
+        }
+
+        function renderFullscreenGallery() {
+            if (activeGalleryImages.length === 0) return;
+            const item = activeGalleryImages[activeGalleryIndex];
             const img = document.getElementById('fullscreen-img-src');
             const dlBtn = document.getElementById('fullscreen-download-btn');
-            img.src = src;
-            dlBtn.href = src;
-            dlBtn.download = `${title.toLowerCase().replace(/\s+/g, '_')}.jpg`;
-            modal.classList.remove('hidden');
+            const titleEl = document.getElementById('fullscreen-title');
+            const counterEl = document.getElementById('fullscreen-counter');
+            const prevBtn = document.getElementById('btn-prev-img');
+            const nextBtn = document.getElementById('btn-next-img');
+
+            img.src = item.conteudo;
+            dlBtn.href = item.conteudo;
+            dlBtn.download = `${(item.titulo || 'ideia').toLowerCase().replace(/\s+/g, '_')}.jpg`;
+            titleEl.innerText = item.titulo || '';
+            counterEl.innerText = `${activeGalleryIndex + 1} / ${activeGalleryImages.length}`;
+
+            if (activeGalleryImages.length > 1) {
+                prevBtn.style.display = 'flex';
+                nextBtn.style.display = 'flex';
+            } else {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            }
+            lucide.createIcons();
         }
+
+        function changeGalleryImage(direction) {
+            if (activeGalleryImages.length <= 1) return;
+            activeGalleryIndex += direction;
+            if (activeGalleryIndex < 0) activeGalleryIndex = activeGalleryImages.length - 1;
+            if (activeGalleryIndex >= activeGalleryImages.length) activeGalleryIndex = 0;
+            renderFullscreenGallery();
+        }
+
         function closeFullscreenImg() {
             document.getElementById('overlay-fullscreen-img').classList.add('hidden');
         }
 
-        // --- SISTEMA DE ARRASTO DA IMAGEM ---
+        // --- SUPORTE A SWIPE (ARRASTAR PARA O LADO) NO MOBILE ---
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const swipeArea = document.getElementById('fullscreen-swipe-area');
+            if (swipeArea) {
+                swipeArea.addEventListener('touchstart', e => {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, {passive: true});
+
+                swipeArea.addEventListener('touchend', e => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipeGesture();
+                }, {passive: true});
+            }
+        });
+
+        function handleSwipeGesture() {
+            const minSwipeDistance = 50;
+            if (touchEndX < touchStartX - minSwipeDistance) {
+                // Arrastou para a esquerda -> Próxima foto
+                changeGalleryImage(1);
+            }
+            if (touchEndX > touchStartX + minSwipeDistance) {
+                // Arrastou para a direita -> Foto anterior
+                changeGalleryImage(-1);
+            }
+        }
+
+        // --- SISTEMA DE ARRASTO DA IMAGEM DO FORMULÁRIO ---
         let dragData = { isDragging: false, startX: 0, startY: 0, initialX: 50, initialY: 50, el: null };
 
         function initImageDrag(imgId) {
@@ -487,9 +570,9 @@
                             <div>
                                 <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Galeria de Fotos</h3>
                                 <div class="grid grid-cols-2 gap-3">
-                                    ${fotos.map(item => `
+                                    ${fotos.map((item, idx) => `
                                         <div class="bg-white rounded-2xl p-2 border border-stone-100 shadow-sm relative group overflow-hidden">
-                                            <div class="w-full h-36 bg-stone-100 rounded-xl overflow-hidden relative cursor-pointer" onclick="openFullscreenImg('${item.conteudo}', '${item.titulo || 'ideia'}')">
+                                            <div class="w-full h-36 bg-stone-100 rounded-xl overflow-hidden relative cursor-pointer" onclick='openFolderGallery(${JSON.stringify(fotos)}, ${idx})'>
                                                 <img src="${item.conteudo}" class="w-full h-full object-cover" style="object-position: ${item.imgPosX||50}% ${item.imgPosY||50}%;">
                                             </div>
                                             <div class="flex justify-between items-center px-1 pt-2">
@@ -995,7 +1078,7 @@
                     if (editingId) state.estoque[state.estoque.findIndex(i => i.id === editingId)] = newData;
                     else {
                         const existingIndex = state.estoque.findIndex(e => e.item === newData.item);
-                        if (existingIndex !== -1) { state.estoque[existingIndex].qtd = (parseFloat(state.estoque[existingIndex].qtd) || 0) + (parseFloat(newData.qtd) || 0); if (newData.obs) state.estoque[existingIndex].obs = newData.obs; state.estoque[existingIndex].img = newData.img; state.estoque[existingIndex].imgPosX = newData.imgPosX; state.estoque[existingIndex].imgPosY = newData.imgPosY; } 
+                        if (existingIndex !== -1) { state.estoque[existingIndex].qtd = (parseFloat(state.estoque[existingIndex].qtd) || 0) + (parseFloat(newData.qtd) || 0); if (newData.obs) state.estoque[existingIndex].obs = newData.obs; if (newData.img) state.estoque[existingIndex].img = newData.img; state.estoque[existingIndex].imgPosX = newData.imgPosX; state.estoque[existingIndex].imgPosY = newData.imgPosY; } 
                         else state.estoque.push(newData);
                     }
                 }
