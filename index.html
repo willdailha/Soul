@@ -170,7 +170,7 @@
 
     <script>
         // --- ESTADO GLOBAL & LOCAL STORAGE ---
-        const STORAGE_KEY = 'soul_atelier_data_v7';
+        const STORAGE_KEY = 'soul_atelier_data_v8';
 
         const state = {
             currentView: 'home',
@@ -196,7 +196,7 @@
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -265,6 +265,17 @@
             document.removeEventListener('mouseup', stopImageDrag); document.removeEventListener('touchend', stopImageDrag);
         }
 
+        // --- REORDENAÇÃO INSTANTÂNEA DE ITENS ---
+        function moveItem(index, direction, arrayName) {
+            const arr = state[arrayName];
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= arr.length) return;
+            const item = arr.splice(index, 1)[0];
+            arr.splice(newIndex, 0, item);
+            saveState();
+            render();
+        }
+
         // --- PARTES DINÂMICAS ---
         function renderDynamicParts() {
             const container = document.getElementById('dynamic-parts-container');
@@ -294,17 +305,6 @@
         function closeConfirmModal() { document.getElementById('overlay-confirm').classList.add('hidden'); confirmCallback = null; }
         document.getElementById('confirm-btn-yes').onclick = () => { if (confirmCallback) confirmCallback(); closeConfirmModal(); };
 
-        // --- DRAG & DROP LISTAS ---
-        let draggedData = { index: null, arrayName: null };
-        function drag(ev, index, arrayName) { draggedData = { index, arrayName }; ev.dataTransfer.effectAllowed = 'move'; }
-        function allowDrop(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; }
-        function drop(ev, targetIndex, arrayName) {
-            ev.preventDefault();
-            if (draggedData.arrayName !== arrayName || draggedData.index === null || draggedData.index === targetIndex) return;
-            const arr = state[arrayName]; const item = arr.splice(draggedData.index, 1)[0];
-            arr.splice(targetIndex, 0, item); draggedData = { index: null, arrayName: null }; saveState(); render();
-        }
-
         // --- SISTEMA DE VIEWS ---
         const views = {
             home: () => {
@@ -313,7 +313,6 @@
                 const totalDespesas = state.financeiro.reduce((acc, t) => acc + Number(t.valor || 0), 0);
                 const faturamentoLiquido = faturamentoBruto - totalDespesas;
 
-                // Filtrar próximas entregas (pedidos não entregues com data definida, ordenados por data)
                 const pendentesEntregas = state.pedidos
                     .filter(p => p.status !== 'Entregue' && p.dataEntrega)
                     .sort((a, b) => new Date(a.dataEntrega) - new Date(b.dataEntrega));
@@ -370,13 +369,13 @@
                         `}
                     </div>
                     
-                    <!-- Insights (Full Width) -->
+                    <!-- Ideias e Arquivos (Full Width) -->
                     <button onclick="navigate('insights')" class="w-full bg-gradient-to-br from-stone-800 to-stone-900 text-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform relative overflow-hidden text-left">
                         <div class="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-4 -translate-y-4">
                             <i data-lucide="lightbulb" class="w-24 h-24"></i>
                         </div>
                         <div class="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner border border-white/10"><i data-lucide="lightbulb" class="text-white pointer-events-none w-5 h-5"></i></div>
-                        <span class="font-bold text-sm">Insights & Inspirações</span>
+                        <span class="font-bold text-sm">Ideias e Arquivos</span>
                     </button>
 
                     <!-- Receitas e Custos (Lado a Lado) -->
@@ -391,7 +390,7 @@
                 <div class="px-5 space-y-4 fade-in pt-2">
                     <div class="flex justify-between items-center mb-4">
                         <button onclick="navigate('home')" class="p-2 -ml-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="arrow-left" class="w-5 h-5 text-stone-600"></i></button>
-                        <h2 class="font-heading text-2xl font-bold text-stone-900 flex-1 ml-2">Insights</h2>
+                        <h2 class="font-heading text-2xl font-bold text-stone-900 flex-1 ml-2">Ideias e Arquivos</h2>
                         <button onclick="openForm('pasta_insight')" class="bg-stone-900 text-white px-3 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform flex items-center gap-1 shadow-sm"><i data-lucide="folder-plus" class="w-4 h-4"></i> Pasta</button>
                     </div>
                     <div class="grid grid-cols-2 gap-3 pb-8">
@@ -522,8 +521,16 @@
                         <button onclick="openForm('custo')" class="bg-brand text-white px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform flex items-center gap-1 shadow-sm"><i data-lucide="plus" class="w-4 h-4 pointer-events-none"></i> Calcular</button>
                     </div>
                     ${state.custos.map((c, index) => `
-                        <div draggable="true" ondragstart="drag(event, ${index}, 'custos')" ondragover="allowDrop(event)" ondrop="drop(event, ${index}, 'custos')" class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative flex items-start gap-3 cursor-grab active:cursor-grabbing">
-                            <div class="flex items-center justify-center shrink-0 pt-1 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
+                        <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative flex items-center gap-3">
+                            <!-- Controles de Ordem Instantânea -->
+                            <div class="flex flex-col gap-1 shrink-0">
+                                <button onclick="moveItem(${index}, -1, 'custos')" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
+                                    <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
+                                </button>
+                                <button onclick="moveItem(${index}, 1, 'custos')" ${index === state.custos.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
+                                </button>
+                            </div>
                             <div class="flex-1 min-w-0">
                                 <button onclick="openForm('custo', ${c.id})" class="absolute top-4 right-4 text-stone-400 active:scale-95"><i data-lucide="edit-3" class="w-4 h-4 pointer-events-none"></i></button>
                                 <h4 class="font-bold text-stone-800 mb-3">${c.nome}</h4>
@@ -571,8 +578,15 @@
                         <div class="flex justify-between items-end mb-4"><h3 class="font-bold">Registro de Despesas</h3></div>
                         ${state.financeiro.length === 0 ? '<p class="text-center text-sm text-stone-400 py-6">Nenhuma despesa cadastrada.</p>' : ''}
                         ${state.financeiro.map((t, index) => `
-                            <div draggable="true" ondragstart="drag(event, ${index}, 'financeiro')" ondragover="allowDrop(event)" ondrop="drop(event, ${index}, 'financeiro')" class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 border border-stone-100 gap-3 cursor-grab active:cursor-grabbing">
-                                <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
+                            <div class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 border border-stone-100 gap-3">
+                                <div class="flex flex-col gap-1 shrink-0">
+                                    <button onclick="moveItem(${index}, -1, 'financeiro')" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
+                                        <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
+                                    </button>
+                                    <button onclick="moveItem(${index}, 1, 'financeiro')" ${index === state.financeiro.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
+                                        <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
+                                    </button>
+                                </div>
                                 <div class="flex items-center justify-between flex-1 min-w-0 cursor-pointer active:scale-95 transition-transform" onclick="openForm('financeiro', ${t.id})">
                                     <div class="flex gap-3 items-center min-w-0">
                                         <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-50 text-red-600"><i data-lucide="arrow-down-right" class="w-5 h-5 pointer-events-none"></i></div>
@@ -602,8 +616,15 @@
                     </div>
                     ${array.length === 0 ? `<p class="text-center text-sm text-stone-400 py-10">Nenhum item cadastrado.</p>` : ''}
                     ${array.map((item, index) => `
-                        <div draggable="true" ondragstart="drag(event, ${index}, '${arrayName}')" ondragover="allowDrop(event)" ondrop="drop(event, ${index}, '${arrayName}')" class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex items-center gap-3 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md">
-                            <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
+                        <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex items-center gap-3 transition-shadow hover:shadow-md">
+                            <div class="flex flex-col gap-1 shrink-0">
+                                <button onclick="moveItem(${index}, -1, '${arrayName}')" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
+                                    <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
+                                </button>
+                                <button onclick="moveItem(${index}, 1, '${arrayName}')" ${index === array.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
+                                </button>
+                            </div>
                             <div class="flex-1 min-w-0">${renderItem(item, index)}</div>
                         </div>
                     `).join('')}
@@ -644,12 +665,12 @@
         const formDefinitions = {
             perfil: { title: 'Editar Perfil', fields: [ { id: 'f-art', label: 'Nome do Artesão', type: 'text', key: 'artisanName' }, { id: 'f-ate', label: 'Nome do Ateliê', type: 'text', key: 'atelierName' }, { id: 'f-img', label: 'Foto de Perfil', type: 'file', key: 'avatar' } ] },
             produto: { title: 'Produto', fields: [ { id: 'f-nome', label: 'Nome da Peça / Produto', type: 'text', key: 'nome' }, { id: 'f-preco', label: 'Preço de Venda (R$)', type: 'number', key: 'preco' }, { id: 'f-tamanho', label: 'Tamanho / Medidas', type: 'text', key: 'tamanho' }, { id: 'f-partes', label: 'Partes e Materiais', type: 'dynamic_parts', key: 'partes' }, { id: 'f-img', label: 'Foto do Produto', type: 'file', key: 'img' } ] },
-            pedido: { title: 'Pedido', fields: [ { id: 'f-cli', label: 'Nome do Cliente', type: 'text', key: 'cliente' }, { id: 'f-status', label: 'Status', type: 'select', options: ['Pendente', 'Em Produção', 'Entregue'], key: 'status' }, { id: 'f-dataEntrega', label: 'Data de Entrega Prevista', type: 'date', key: 'dataEntrega' }, { id: 'f-venderEstoque', label: 'Vender item do estoque?', type: 'checkbox', key: 'venderEstoque' }, { id: 'f-item', label: 'Selecionar Produto', type: 'product_select', key: 'item' }, { id: 'f-qtd', label: 'Quantidade', type: 'number', key: 'qtd' }, { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' }, { id: 'f-img', label: 'Foto de Referência', type: 'file', key: 'img' } ] },
+            pedido: { title: 'Pedido', fields: [ { id: 'f-cli', label: 'Nome do Cliente', type: 'text', key: 'cliente' }, { id: 'f-status', label: 'Status', type: 'select', options: ['Pendente', 'Em Produção', 'Entregue'], key: 'status' }, { id: 'f-dataEntrega', label: 'Data de Entrega Prevista', type: 'date', key: 'dataEntrega' }, { id: 'f-venderEstoque', label: 'Vender item do estoque?', type: 'checkbox', key: 'venderEstoque' }, { id: 'f-item', label: 'Selecionar Produto', type: 'product_select', key: 'item' }, { id: 'f-qtd', label: 'Quantidade', type: 'number', key: 'qtd' }, { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' } ] },
             estoque: { title: 'Item de Estoque', fields: [ { id: 'f-item', label: 'Selecionar Produto', type: 'product_select_all', key: 'item' }, { id: 'f-qtd', label: 'Quantidade (0 para apagar)', type: 'number', key: 'qtd' }, { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' }, { id: 'f-img', label: 'Foto', type: 'file', key: 'img' } ] },
             receita: { title: 'Receita', fields: [ { id: 'f-nome', label: 'Nome da Peça', type: 'text', key: 'nome' }, { id: 'f-fio', label: 'Fio Utilizado', type: 'text', key: 'fio' }, { id: 'f-agulha', label: 'Agulha(s)', type: 'text', key: 'agulha' }, { id: 'f-desc', label: 'Passo a passo / Anotações', type: 'textarea', key: 'desc' }, { id: 'f-img', label: 'Foto da Peça Final', type: 'file', key: 'img' } ] },
             financeiro: { title: 'Despesa', fields: [ { id: 'f-cat', label: 'Categoria', type: 'select', options: ['Matéria-prima', 'Embalagens', 'Ferramentas', 'Frete', 'Outros'], key: 'categoria' }, { id: 'f-desc', label: 'Descrição da Despesa', type: 'text', key: 'desc' }, { id: 'f-valor', label: 'Valor (R$)', type: 'number', key: 'valor' }, { id: 'f-data', label: 'Data', type: 'date', key: 'data' } ] },
             custo: { title: 'Calculadora de Custos', fields: [ { id: 'c-nome', label: 'Nome da Peça', type: 'text', key: 'nome' }, { id: 'c-precoRolo', label: 'Preço no Rolo (R$)', type: 'number', key: 'precoRolo' }, { id: 'c-pesoRolo', label: 'Peso Total Rolo (g)', type: 'number', key: 'pesoRolo' }, { id: 'c-pesoGasto', label: 'Peso Gasto na Peça (g)', type: 'number', key: 'pesoGasto' }, { id: 'c-extras', label: 'Custos Extras (Caixa) (R$)', type: 'number', key: 'extras' }, { id: 'c-horas', label: 'Tempo de Trabalho (h)', type: 'number', key: 'horas' }, { id: 'c-valorHora', label: 'Valor da Hora (R$)', type: 'number', key: 'valorHora' } ] },
-            pasta_insight: { title: 'Pasta de Insights', fields: [ { id: 'f-nome', label: 'Nome da Pasta', type: 'text', key: 'nome' } ] },
+            pasta_insight: { title: 'Pasta de Ideias', fields: [ { id: 'f-nome', label: 'Nome da Pasta', type: 'text', key: 'nome' } ] },
             insight_link: { title: 'Salvar Link', fields: [ { id: 'f-titulo', label: 'Título / Descrição', type: 'text', key: 'titulo' }, { id: 'f-conteudo', label: 'URL / Link', type: 'text', key: 'conteudo' } ] },
             insight_image: { title: 'Salvar Foto/Ideia', fields: [ { id: 'f-titulo', label: 'Título / Descrição', type: 'text', key: 'titulo' }, { id: 'f-img', label: 'Foto (Carregue a imagem)', type: 'file', key: 'conteudo' } ] }
         };
@@ -915,7 +936,16 @@
                 navigate('estoque');
             } else if (type === 'pedido') {
                 if (!newData.qtd || newData.qtd < 1) newData.qtd = 1;
-                const prod = state.produtos.find(p => p.nome === newData.item); newData.valor = (prod ? Number(prod.preco || 0) : 0) * newData.qtd;
+                const prod = state.produtos.find(p => p.nome === newData.item); 
+                newData.valor = (prod ? Number(prod.preco || 0) : 0) * newData.qtd;
+                
+                // Puxa automaticamente a foto e enquadramento do produto selecionado
+                if (prod) {
+                    newData.img = prod.img || '';
+                    newData.imgPosX = prod.imgPosX !== undefined ? prod.imgPosX : 50;
+                    newData.imgPosY = prod.imgPosY !== undefined ? prod.imgPosY : 50;
+                }
+
                 if (newData.venderEstoque && newData.qtd > 0) {
                     const stockItem = state.estoque.find(e => e.item === newData.item);
                     if (stockItem) { stockItem.qtd = Math.max(0, (parseFloat(stockItem.qtd) || 0) - parseFloat(newData.qtd)); if (stockItem.qtd <= 0) state.estoque = state.estoque.filter(e => e.id !== stockItem.id); }
