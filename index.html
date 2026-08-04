@@ -360,16 +360,20 @@
                 
                 const a = document.createElement('a');
                 a.href = url;
+                a.target = '_blank';
                 a.download = `${(item.titulo || 'soul_foto').toLowerCase().replace(/\s+/g, '_')}.jpg`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
             } catch(e) {
                 const a = document.createElement('a');
                 a.href = item.conteudo;
+                a.target = '_blank';
                 a.download = 'soul_foto.jpg';
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
             }
         }
 
