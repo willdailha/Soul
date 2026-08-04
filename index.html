@@ -64,7 +64,7 @@
         </nav>
     </div>
 
-    <!-- FULLSCREEN IMAGE VIEWER MODAL (COM SWIPE E NAVEGAÇÃO) -->
+    <!-- FULLSCREEN IMAGE VIEWER MODAL (COM SWIPE E DOWNLOAD BLOB NATIVO) -->
     <div id="overlay-fullscreen-img" class="fixed inset-0 bg-black/95 z-[70] hidden flex flex-col items-center justify-between p-6">
         <div class="w-full flex justify-between items-center z-10">
             <span id="fullscreen-counter" class="text-white/70 text-xs font-semibold">1/1</span>
@@ -79,7 +79,7 @@
 
         <div class="w-full flex flex-col items-center gap-3 z-10">
             <p id="fullscreen-title" class="text-white text-sm font-bold text-center truncate max-w-[280px]"></p>
-            <a id="fullscreen-download-btn" href="#" download="soul_foto.jpg" class="bg-brand text-white px-6 py-3.5 rounded-2xl font-bold text-xs flex items-center gap-2 active:scale-95 shadow-lg"><i data-lucide="download" class="w-4 h-4"></i> Baixar Foto no Aparelho</a>
+            <button onclick="downloadCurrentPhoto()" class="bg-brand text-white px-6 py-3.5 rounded-2xl font-bold text-xs flex items-center gap-2 active:scale-95 shadow-lg"><i data-lucide="download" class="w-4 h-4"></i> Baixar Foto no Aparelho (Qualidade Natural)</button>
         </div>
     </div>
 
@@ -189,7 +189,7 @@
 
     <script>
         // --- ESTADO GLOBAL & LOCAL STORAGE ---
-        const STORAGE_KEY = 'soul_atelier_data_v13';
+        const STORAGE_KEY = 'soul_atelier_data_v14';
 
         const state = {
             currentView: 'home',
@@ -206,7 +206,9 @@
             currentOrderId: null,
             currentStockId: null,
             currentProductViewId: null,
-            currentInsightFolderId: null
+            currentInsightFolderId: null,
+            insightSelectionMode: false,
+            insightSelectedIds: []
         };
 
         function saveState() {
@@ -215,7 +217,7 @@
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v12', 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v13', 'soul_atelier_data_v12', 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -237,7 +239,7 @@
         }
         loadState();
 
-        // --- VISUALIZADOR DE IMAGEM EM TELA CHEIA (GALERIA COM SWIPE) ---
+        // --- VISUALIZADOR DE IMAGEM EM TELA CHEIA (COM DOWNLOAD BLOB NATIVO) ---
         let activeGalleryImages = [];
         let activeGalleryIndex = 0;
 
@@ -259,15 +261,12 @@
             if (activeGalleryImages.length === 0) return;
             const item = activeGalleryImages[activeGalleryIndex];
             const img = document.getElementById('fullscreen-img-src');
-            const dlBtn = document.getElementById('fullscreen-download-btn');
             const titleEl = document.getElementById('fullscreen-title');
             const counterEl = document.getElementById('fullscreen-counter');
             const prevBtn = document.getElementById('btn-prev-img');
             const nextBtn = document.getElementById('btn-next-img');
 
             img.src = item.conteudo;
-            dlBtn.href = item.conteudo;
-            dlBtn.download = `${(item.titulo || 'ideia').toLowerCase().replace(/\s+/g, '_')}.jpg`;
             titleEl.innerText = item.titulo || '';
             counterEl.innerText = `${activeGalleryIndex + 1} / ${activeGalleryImages.length}`;
 
@@ -291,6 +290,35 @@
 
         function closeFullscreenImg() {
             document.getElementById('overlay-fullscreen-img').classList.add('hidden');
+        }
+
+        function downloadCurrentPhoto() {
+            const item = activeGalleryImages[activeGalleryIndex];
+            if (!item || !item.conteudo) return;
+            try {
+                const arr = item.conteudo.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while(n--) { u8arr[n] = bstr.charCodeAt(n); }
+                const blob = new Blob([u8arr], {type: mime});
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${(item.titulo || 'soul_foto').toLowerCase().replace(/\s+/g, '_')}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch(e) {
+                // Fallback direto
+                const a = document.createElement('a');
+                a.href = item.conteudo;
+                a.download = 'soul_foto.jpg';
+                a.click();
+            }
         }
 
         // --- SUPORTE A SWIPE (ARRASTAR PARA O LADO) NO MOBILE ---
@@ -408,6 +436,36 @@
                 saveState();
                 render();
             }
+        }
+
+        // --- SELEÇÃO MÚLTIPLA NA GALERIA ---
+        function toggleInsightSelectionMode() {
+            state.insightSelectionMode = !state.insightSelectionMode;
+            state.insightSelectedIds = [];
+            render();
+        }
+
+        function togglePhotoSelection(id) {
+            const index = state.insightSelectedIds.indexOf(id);
+            if (index > -1) {
+                state.insightSelectedIds.splice(index, 1);
+            } else {
+                state.insightSelectedIds.push(id);
+            }
+            render();
+        }
+
+        function deleteSelectedInsightPhotos() {
+            showCustomConfirm(`Deseja excluir ${state.insightSelectedIds.length} foto(s) selecionada(s)?`, () => {
+                const pasta = state.insights.find(f => f.id === state.currentInsightFolderId);
+                if (pasta) {
+                    pasta.items = pasta.items.filter(i => !state.insightSelectedIds.includes(i.id));
+                    state.insightSelectionMode = false;
+                    state.insightSelectedIds = [];
+                    saveState();
+                    render();
+                }
+            });
         }
 
         // --- PARTES DINÂMICAS ---
@@ -552,12 +610,13 @@
                 const links = (pasta.items || []).filter(i => i.tipo === 'link');
 
                 return `
-                <div class="px-5 space-y-4 fade-in pt-2 pb-10">
+                <div class="px-5 space-y-4 fade-in pt-2 pb-24">
                     <div class="flex justify-between items-center mb-6">
                         <button onclick="navigate('insights')" class="p-2 -ml-2 bg-stone-100 rounded-full active:scale-95 shrink-0"><i data-lucide="arrow-left" class="w-5 h-5 text-stone-600"></i></button>
                         <h2 class="font-heading text-xl font-bold text-stone-900 truncate flex-1 ml-3">${pasta.nome}</h2>
                         <button onclick="openForm('pasta_insight', ${pasta.id})" class="p-2 bg-stone-100 text-stone-600 rounded-full active:scale-95 shrink-0 ml-2"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                     </div>
+                    
                     <div class="flex gap-3 mb-6">
                         <button onclick="openForm('insight_image')" class="flex-1 bg-stone-900 text-white py-3 rounded-xl text-xs font-bold active:scale-95 flex flex-col items-center justify-center gap-1 shadow-md"><i data-lucide="image" class="w-5 h-5 mb-1"></i> Nova Foto</button>
                         <button onclick="openForm('insight_link')" class="flex-1 bg-white border border-stone-200 text-stone-700 py-3 rounded-xl text-xs font-bold active:scale-95 flex flex-col items-center justify-center gap-1 shadow-sm"><i data-lucide="link" class="w-5 h-5 mb-1"></i> Novo Link</button>
@@ -566,19 +625,32 @@
                     <div class="space-y-6">
                         ${fotos.length > 0 ? `
                             <div>
-                                <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Galeria de Fotos</h3>
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-xs font-bold text-stone-400 uppercase tracking-wider">Galeria de Fotos (${fotos.length})</h3>
+                                    <button onclick="toggleInsightSelectionMode()" class="text-xs font-bold ${state.insightSelectionMode ? 'text-brand bg-brand-light/40 px-2.5 py-1 rounded-lg' : 'text-stone-500 hover:text-stone-800'} transition-colors">
+                                        ${state.insightSelectionMode ? 'Concluir' : 'Selecionar Várias'}
+                                    </button>
+                                </div>
                                 <div class="grid grid-cols-2 gap-3">
-                                    ${fotos.map((item, idx) => `
-                                        <div class="bg-white rounded-2xl p-2 border border-stone-100 shadow-sm relative group overflow-hidden">
-                                            <div class="w-full h-36 bg-stone-100 rounded-xl overflow-hidden relative cursor-pointer" onclick='openFolderGallery(${JSON.stringify(fotos)}, ${idx})'>
-                                                <img src="${item.conteudo}" class="w-full h-full object-cover" style="object-position: ${item.imgPosX||50}% ${item.imgPosY||50}%;">
+                                    ${fotos.map((item, idx) => {
+                                        const isSelected = state.insightSelectedIds.includes(item.id);
+                                        return `
+                                            <div class="bg-white rounded-2xl p-2 border ${isSelected ? 'border-brand bg-brand-light/10 shadow-md ring-2 ring-brand/30' : 'border-stone-100 shadow-sm'} relative group overflow-hidden transition-all">
+                                                <div class="w-full h-36 bg-stone-100 rounded-xl overflow-hidden relative cursor-pointer" onclick="${state.insightSelectionMode ? `togglePhotoSelection(${item.id})` : `openFolderGallery(${JSON.stringify(fotos)}, ${idx})`}">
+                                                    <img src="${item.conteudo}" class="w-full h-full object-cover" style="object-position: ${item.imgPosX||50}% ${item.imgPosY||50}%;">
+                                                    ${state.insightSelectionMode ? `
+                                                        <div class="absolute top-2 right-2 w-7 h-7 rounded-full ${isSelected ? 'bg-brand text-white' : 'bg-white/80 text-transparent border border-stone-300'} flex items-center justify-center shadow-sm transition-all">
+                                                            <i data-lucide="check" class="w-4 h-4 ${isSelected ? '' : 'opacity-0'}"></i>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                <div class="flex justify-between items-center px-1 pt-2">
+                                                    <span class="text-[10px] text-stone-400 truncate flex-1">Foto ${idx + 1}</span>
+                                                    ${!state.insightSelectionMode ? `<button onclick="deleteInsightItem(${item.id})" class="p-1 text-red-400 hover:text-red-600 active:scale-95"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+                                                </div>
                                             </div>
-                                            <div class="flex justify-between items-center px-1 pt-2">
-                                                <span class="text-[10px] text-stone-400 truncate flex-1">Foto ${idx + 1}</span>
-                                                <button onclick="deleteInsightItem(${item.id})" class="p-1 text-red-400 hover:text-red-600 active:scale-95"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                                            </div>
-                                        </div>
-                                    `).join('')}
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         ` : ''}
@@ -603,6 +675,14 @@
 
                         ${!(pasta.items?.length) ? '<p class="text-center text-sm text-stone-400 py-6">Nenhum item salvo nesta pasta.</p>' : ''}
                     </div>
+
+                    ${state.insightSelectionMode && state.insightSelectedIds.length > 0 ? `
+                        <div class="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-md px-5 z-50">
+                            <button onclick="deleteSelectedInsightPhotos()" class="w-full bg-red-600 text-white py-3.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-2xl active:scale-95">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir Fotos Selecionadas (${state.insightSelectedIds.length})
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
                 `;
             },
@@ -799,8 +879,19 @@
             }
         }
 
-        function navigate(view) { state.currentView = view; closeAllModals(); render(); }
-        function openInsightFolder(id) { state.currentInsightFolderId = id; navigate('insight_folder'); }
+        function navigate(view) { 
+            state.currentView = view; 
+            state.insightSelectionMode = false;
+            state.insightSelectedIds = [];
+            closeAllModals(); 
+            render(); 
+        }
+        function openInsightFolder(id) { 
+            state.currentInsightFolderId = id; 
+            state.insightSelectionMode = false;
+            state.insightSelectedIds = [];
+            navigate('insight_folder'); 
+        }
 
         // --- DEFINIÇÃO DOS FORMULÁRIOS ---
         const formDefinitions = {
@@ -813,7 +904,7 @@
             custo: { title: 'Calculadora de Custos', fields: [ { id: 'c-nome', label: 'Nome da Peça', type: 'text', key: 'nome' }, { id: 'c-precoRolo', label: 'Preço no Rolo (R$)', type: 'number', key: 'precoRolo' }, { id: 'c-pesoRolo', label: 'Peso Total Rolo (g)', type: 'number', key: 'pesoRolo' }, { id: 'c-pesoGasto', label: 'Peso Gasto na Peça (g)', type: 'number', key: 'pesoGasto' }, { id: 'c-extras', label: 'Custos Extras (Caixa) (R$)', type: 'number', key: 'extras' }, { id: 'c-horas', label: 'Tempo de Trabalho (h)', type: 'number', key: 'horas' }, { id: 'c-valorHora', label: 'Valor da Hora (R$)', type: 'number', key: 'valorHora' } ] },
             pasta_insight: { title: 'Pasta de Ideias', fields: [ { id: 'f-nome', label: 'Nome da Pasta', type: 'text', key: 'nome' } ] },
             insight_link: { title: 'Salvar Link', fields: [ { id: 'f-titulo', label: 'Título / Descrição', type: 'text', key: 'titulo' }, { id: 'f-conteudo', label: 'URL / Link', type: 'text', key: 'conteudo' } ] },
-            insight_image: { title: 'Salvar Fotos', fields: [ { id: 'f-img', label: 'Selecionar Fotos (Permite várias em alta qualidade)', type: 'multiple_files', key: 'conteudo' } ] }
+            insight_image: { title: 'Salvar Fotos', fields: [ { id: 'f-img', label: 'Selecionar Fotos (Qualidade Original)', type: 'multiple_files', key: 'conteudo' } ] }
         };
 
         // --- SELETOR CUSTOMIZADO ---
@@ -955,7 +1046,7 @@
 
         function closeFormModal() { document.getElementById('overlay-form').classList.add('hidden'); }
 
-        // CARREGAMENTO DE MÚLTIPLAS FOTOS EM QUALIDADE NATURAL (SEM COMPRESSÃO)
+        // CARREGAMENTO DE MÚLTIPLAS FOTOS EM QUALIDADE NATURAL
         function handleMultipleImagesUpload(event) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -979,7 +1070,7 @@
             });
         }
 
-        // CARREGAMENTO DE FOTO ÚNICA EM QUALIDADE NATURAL (SEM COMPRESSÃO)
+        // CARREGAMENTO DE FOTO ÚNICA EM QUALIDADE NATURAL
         function handleImageUpload(event, previewId, containerId) {
             const file = event.target.files[0];
             if (file) {
