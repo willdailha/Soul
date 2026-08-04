@@ -188,8 +188,10 @@
     </div>
 
     <script>
-        // --- ESTADO GLOBAL & LOCAL STORAGE ---
-        const STORAGE_KEY = 'soul_atelier_data_v15';
+        // --- ESTADO GLOBAL & INDEXEDDB (ARMAZENAMENTO INTERNO AMPLIADO) ---
+        const DB_NAME = 'SoulAtelierDB';
+        const STORE_NAME = 'atelier_store';
+        const STATE_KEY = 'main_state';
 
         const state = {
             currentView: 'home',
@@ -214,33 +216,86 @@
         // Variável global para armazenar temporariamente as fotos da pasta atual
         let activeFolderPhotos = [];
 
-        function saveState() {
-            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } 
-            catch (e) { alert("Atenção: O armazenamento ficou cheio devido ao tamanho das fotos em alta resolução."); }
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+            });
         }
 
-        function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v14', 'soul_atelier_data_v13', 'soul_atelier_data_v12', 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
-            for (const k of keysToTry) {
-                const saved = localStorage.getItem(k);
-                if (saved) {
-                    try {
-                        const parsed = JSON.parse(saved);
-                        if (parsed.config) state.config = { ...state.config, ...parsed.config };
-                        if (parsed.pedidos) state.pedidos = parsed.pedidos;
-                        if (parsed.estoque) state.estoque = parsed.estoque.filter(e => parseFloat(e.qtd || 0) > 0);
-                        if (parsed.receitas) state.receitas = parsed.receitas;
-                        if (parsed.custos) state.custos = parsed.custos;
-                        if (parsed.financeiro) state.financeiro = parsed.financeiro;
-                        if (parsed.produtos) state.produtos = parsed.produtos;
-                        if (parsed.insights) state.insights = parsed.insights;
-                        break;
-                    } catch(e) {}
+        async function saveStateToIDB() {
+            try {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    store.put(JSON.parse(JSON.stringify(state)), STATE_KEY);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+            } catch (e) {
+                console.error("Erro ao salvar no IndexedDB:", e);
+            }
+        }
+
+        async function loadStateFromIDB() {
+            try {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.get(STATE_KEY);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function saveState() {
+            await saveStateToIDB();
+        }
+
+        async function loadState() {
+            let parsed = await loadStateFromIDB();
+            
+            // Fallback: se não estiver no IndexedDB, tenta resgatar do localStorage antigo para migração automática
+            if (!parsed) {
+                const keysToTry = ['soul_atelier_data_v15', 'soul_atelier_data_v14', 'soul_atelier_data_v13', 'soul_atelier_data_v12', 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
+                for (const k of keysToTry) {
+                    const saved = localStorage.getItem(k);
+                    if (saved) {
+                        try {
+                            parsed = JSON.parse(saved);
+                            break;
+                        } catch(e) {}
+                    }
                 }
             }
+
+            if (parsed) {
+                if (parsed.config) state.config = { ...state.config, ...parsed.config };
+                if (parsed.pedidos) state.pedidos = parsed.pedidos;
+                if (parsed.estoque) state.estoque = parsed.estoque.filter(e => parseFloat(e.qtd || 0) > 0);
+                if (parsed.receitas) state.receitas = parsed.receitas;
+                if (parsed.custos) state.custos = parsed.custos;
+                if (parsed.financeiro) state.financeiro = parsed.financeiro;
+                if (parsed.produtos) state.produtos = parsed.produtos;
+                if (parsed.insights) state.insights = parsed.insights;
+            }
             if(!state.insights) state.insights = [];
+
+            // Salva logo no IndexedDB a base carregada
+            await saveStateToIDB();
         }
-        loadState();
 
         // --- VISUALIZADOR DE IMAGEM EM TELA CHEIA (COM DOWNLOAD BLOB NATIVO) ---
         let activeGalleryImages = [];
@@ -417,7 +472,7 @@
             const card = ev.currentTarget;
             card.classList.remove('border-brand', 'bg-brand-light/20', 'scale-[1.01]');
         }
-        function drop(ev, targetIndex, arrayName) {
+        async function drop(ev, targetIndex, arrayName) {
             ev.preventDefault();
             document.querySelectorAll('.drag-target').forEach(el => el.classList.remove('border-brand', 'bg-brand-light/20', 'scale-[1.01]'));
             if (draggedData.arrayName !== arrayName || draggedData.index === null || draggedData.index === targetIndex) return;
@@ -425,17 +480,17 @@
             const item = arr.splice(draggedData.index, 1)[0];
             arr.splice(targetIndex, 0, item);
             draggedData = { index: null, arrayName: null };
-            saveState();
+            await saveState();
             render();
         }
 
         // --- AÇÃO RÁPIDA: MARCAR PEDIDO COMO ENTREGUE ---
-        function markOrderAsDelivered(event, id) {
+        async function markOrderAsDelivered(event, id) {
             event.stopPropagation();
             const p = state.pedidos.find(item => item.id === id);
             if (p) {
                 p.status = 'Entregue';
-                saveState();
+                await saveState();
                 render();
             }
         }
@@ -458,13 +513,13 @@
         }
 
         function deleteSelectedInsightPhotos() {
-            showCustomConfirm(`Deseja excluir ${state.insightSelectedIds.length} foto(s) selecionada(s)?`, () => {
+            showCustomConfirm(`Deseja excluir ${state.insightSelectedIds.length} foto(s) selecionada(s)?`, async () => {
                 const pasta = state.insights.find(f => f.id === state.currentInsightFolderId);
                 if (pasta) {
                     pasta.items = pasta.items.filter(i => !state.insightSelectedIds.includes(i.id));
                     state.insightSelectionMode = false;
                     state.insightSelectedIds = [];
-                    saveState();
+                    await saveState();
                     render();
                 }
             });
@@ -611,7 +666,6 @@
                 const fotos = (pasta.items || []).filter(i => i.tipo !== 'link');
                 const links = (pasta.items || []).filter(i => i.tipo === 'link');
 
-                // Atualiza a referência global das fotos da pasta atual para uso seguro no visualizador
                 activeFolderPhotos = fotos;
 
                 return `
@@ -1106,7 +1160,7 @@
         }
         function closeRecipeModal() { document.getElementById('overlay-recipe').classList.add('hidden'); }
         function editRecipeFromDetail() { closeRecipeModal(); openForm('receita', state.currentRecipeViewId); }
-        function deleteRecipeFromDetail() { showCustomConfirm('Excluir esta receita?', () => { state.receitas = state.receitas.filter(i => i.id !== state.currentRecipeViewId); saveState(); closeRecipeModal(); render(); }); }
+        function deleteRecipeFromDetail() { showCustomConfirm('Excluir esta receita?', async () => { state.receitas = state.receitas.filter(i => i.id !== state.currentRecipeViewId); await saveState(); closeRecipeModal(); render(); }); }
 
         function openOrderDetail(id) {
             closeAllModals(); state.currentOrderId = id; const p = state.pedidos.find(item => item.id === id); if (!p) return;
@@ -1120,7 +1174,7 @@
         }
         function closeOrderModal() { document.getElementById('overlay-order').classList.add('hidden'); }
         function editOrderFromDetail() { closeOrderModal(); openForm('pedido', state.currentOrderId); }
-        function deleteOrderFromDetail() { showCustomConfirm('Excluir este pedido?', () => { state.pedidos = state.pedidos.filter(i => i.id !== state.currentOrderId); saveState(); closeOrderModal(); render(); }); }
+        function deleteOrderFromDetail() { showCustomConfirm('Excluir este pedido?', async () => { state.pedidos = state.pedidos.filter(i => i.id !== state.currentOrderId); await saveState(); closeOrderModal(); render(); }); }
 
         function openStockDetail(id) {
             closeAllModals(); state.currentStockId = id; const e = state.estoque.find(item => item.id === id); if (!e) return;
@@ -1132,7 +1186,7 @@
         }
         function closeStockModal() { document.getElementById('overlay-stock').classList.add('hidden'); }
         function editStockFromDetail() { closeStockModal(); openForm('estoque', state.currentStockId); }
-        function deleteStockFromDetail() { showCustomConfirm('Excluir item do estoque?', () => { state.estoque = state.estoque.filter(i => i.id !== state.currentStockId); saveState(); closeStockModal(); render(); }); }
+        function deleteStockFromDetail() { showCustomConfirm('Excluir item do estoque?', async () => { state.estoque = state.estoque.filter(i => i.id !== state.currentStockId); await saveState(); closeStockModal(); render(); }); }
 
         function openProductDetail(id) {
             closeAllModals(); state.currentProductViewId = id; const pr = state.produtos.find(item => item.id === id); if (!pr) return;
@@ -1145,14 +1199,14 @@
         }
         function closeProductModal() { document.getElementById('overlay-product').classList.add('hidden'); }
         function editProductFromDetail() { closeProductModal(); openForm('produto', state.currentProductViewId); }
-        function deleteProductFromDetail() { showCustomConfirm('Excluir produto (removerá do estoque)?', () => { const pr = state.produtos.find(i => i.id === state.currentProductViewId); if (pr) { state.estoque = state.estoque.filter(e => e.item !== pr.nome); } state.produtos = state.produtos.filter(i => i.id !== state.currentProductViewId); saveState(); closeProductModal(); render(); }); }
+        function deleteProductFromDetail() { showCustomConfirm('Excluir produto (removerá do estoque)?', async () => { const pr = state.produtos.find(i => i.id === state.currentProductViewId); if (pr) { state.estoque = state.estoque.filter(e => e.item !== pr.nome); } state.produtos = state.produtos.filter(i => i.id !== state.currentProductViewId); await saveState(); closeProductModal(); render(); }); }
 
         function deleteInsightItem(itemId) {
-            showCustomConfirm('Excluir este item?', () => {
+            showCustomConfirm('Excluir este item?', async () => {
                 const folder = state.insights.find(f => f.id === state.currentInsightFolderId);
                 if (folder) {
                     folder.items = folder.items.filter(i => i.id !== itemId);
-                    saveState();
+                    await saveState();
                     render();
                 }
             });
@@ -1169,7 +1223,7 @@
         }
 
         // --- SUBMIT E DELETE ---
-        function submitForm() {
+        async function submitForm() {
             const { type, editingId, tempImage, tempImagesMultiple, tempImgPosX, tempImgPosY, tempPartes } = state.formState;
             const def = formDefinitions[type];
             let newData = { id: editingId || Date.now(), imgPosX: tempImgPosX, imgPosY: tempImgPosY };
@@ -1247,22 +1301,27 @@
                 if (editingId) state[targetArray][state[targetArray].findIndex(i => i.id === editingId)] = newData; else state[targetArray].push(newData);
                 if (!editingId && ['pedido', 'estoque', 'receita', 'financeiro'].includes(type)) navigate(type === 'estoque' ? 'estoque' : (type === 'financeiro' ? 'financeiro' : type + 's'));
             }
-            saveState(); closeAllModals(); render();
+            await saveState(); closeAllModals(); render();
         }
 
         function deleteCurrentItem() {
-            showCustomConfirm('Tem certeza que deseja excluir este item?', () => {
+            showCustomConfirm('Tem certeza que deseja excluir este item?', async () => {
                 const { type, editingId } = state.formState;
                 if (type === 'pasta_insight') { state.insights = state.insights.filter(i => i.id !== editingId); navigate('insights'); }
                 else if (type === 'insight_link') { const folder = state.insights.find(f => f.id === state.currentInsightFolderId); folder.items = folder.items.filter(i => i.id !== editingId); navigate('insight_folder'); }
                 else if (type === 'produto') { const pr = state.produtos.find(i => i.id === editingId); if (pr) { state.estoque = state.estoque.filter(e => e.item !== pr.nome); } state.produtos = state.produtos.filter(i => i.id !== editingId); } 
                 else { const targetArray = type === 'pedido' ? 'pedidos' : (type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'custo' ? 'custos' : (type === 'receita' ? 'receitas' : type + 's')))); state[targetArray] = state[targetArray].filter(i => i.id !== editingId); }
-                saveState(); closeAllModals(); render();
+                await saveState(); closeAllModals(); render();
             });
         }
 
-        render();
-        document.addEventListener('DOMContentLoaded', () => { render(); });
+        // Inicialização assíncrona do banco de dados e renderização do app
+        async function initApp() {
+            await loadState();
+            render();
+        }
+
+        initApp();
     </script>
     <script> if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); } </script>
 </body>
