@@ -170,7 +170,7 @@
 
     <script>
         // --- ESTADO GLOBAL & LOCAL STORAGE ---
-        const STORAGE_KEY = 'soul_atelier_data_v8';
+        const STORAGE_KEY = 'soul_atelier_data_v9';
 
         const state = {
             currentView: 'home',
@@ -196,7 +196,7 @@
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -265,13 +265,33 @@
             document.removeEventListener('mouseup', stopImageDrag); document.removeEventListener('touchend', stopImageDrag);
         }
 
-        // --- REORDENAÇÃO INSTANTÂNEA DE ITENS ---
-        function moveItem(index, direction, arrayName) {
+        // --- SISTEMA DE ARRASTAR E SOLTAR LISTAS (DRAG & DROP) ---
+        let draggedData = { index: null, arrayName: null };
+        function drag(ev, index, arrayName) {
+            draggedData = { index, arrayName };
+            ev.dataTransfer.effectAllowed = 'move';
+        }
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.dataTransfer.dropEffect = 'move';
+        }
+        function dragEnter(ev) {
+            ev.preventDefault();
+            const card = ev.currentTarget;
+            card.classList.add('border-brand', 'bg-brand-light/20', 'scale-[1.01]');
+        }
+        function dragLeave(ev) {
+            const card = ev.currentTarget;
+            card.classList.remove('border-brand', 'bg-brand-light/20', 'scale-[1.01]');
+        }
+        function drop(ev, targetIndex, arrayName) {
+            ev.preventDefault();
+            document.querySelectorAll('.drag-target').forEach(el => el.classList.remove('border-brand', 'bg-brand-light/20', 'scale-[1.01]'));
+            if (draggedData.arrayName !== arrayName || draggedData.index === null || draggedData.index === targetIndex) return;
             const arr = state[arrayName];
-            const newIndex = index + direction;
-            if (newIndex < 0 || newIndex >= arr.length) return;
-            const item = arr.splice(index, 1)[0];
-            arr.splice(newIndex, 0, item);
+            const item = arr.splice(draggedData.index, 1)[0];
+            arr.splice(targetIndex, 0, item);
+            draggedData = { index: null, arrayName: null };
             saveState();
             render();
         }
@@ -521,16 +541,8 @@
                         <button onclick="openForm('custo')" class="bg-brand text-white px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform flex items-center gap-1 shadow-sm"><i data-lucide="plus" class="w-4 h-4 pointer-events-none"></i> Calcular</button>
                     </div>
                     ${state.custos.map((c, index) => `
-                        <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative flex items-center gap-3">
-                            <!-- Controles de Ordem Instantânea -->
-                            <div class="flex flex-col gap-1 shrink-0">
-                                <button onclick="moveItem(${index}, -1, 'custos')" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
-                                    <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
-                                </button>
-                                <button onclick="moveItem(${index}, 1, 'custos')" ${index === state.custos.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
-                                    <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
-                                </button>
-                            </div>
+                        <div draggable="true" ondragstart="drag(event, ${index}, 'custos')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, ${index}, 'custos')" class="drag-target bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative flex items-start gap-3 cursor-grab active:cursor-grabbing transition-all hover:shadow-md">
+                            <div class="flex items-center justify-center shrink-0 pt-1 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
                             <div class="flex-1 min-w-0">
                                 <button onclick="openForm('custo', ${c.id})" class="absolute top-4 right-4 text-stone-400 active:scale-95"><i data-lucide="edit-3" class="w-4 h-4 pointer-events-none"></i></button>
                                 <h4 class="font-bold text-stone-800 mb-3">${c.nome}</h4>
@@ -578,15 +590,8 @@
                         <div class="flex justify-between items-end mb-4"><h3 class="font-bold">Registro de Despesas</h3></div>
                         ${state.financeiro.length === 0 ? '<p class="text-center text-sm text-stone-400 py-6">Nenhuma despesa cadastrada.</p>' : ''}
                         ${state.financeiro.map((t, index) => `
-                            <div class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 border border-stone-100 gap-3">
-                                <div class="flex flex-col gap-1 shrink-0">
-                                    <button onclick="moveItem(${index}, -1, 'financeiro')" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
-                                        <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
-                                    </button>
-                                    <button onclick="moveItem(${index}, 1, 'financeiro')" ${index === state.financeiro.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
-                                        <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
-                                    </button>
-                                </div>
+                            <div draggable="true" ondragstart="drag(event, ${index}, 'financeiro')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, ${index}, 'financeiro')" class="drag-target flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 border border-stone-100 gap-3 cursor-grab active:cursor-grabbing transition-all">
+                                <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
                                 <div class="flex items-center justify-between flex-1 min-w-0 cursor-pointer active:scale-95 transition-transform" onclick="openForm('financeiro', ${t.id})">
                                     <div class="flex gap-3 items-center min-w-0">
                                         <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-50 text-red-600"><i data-lucide="arrow-down-right" class="w-5 h-5 pointer-events-none"></i></div>
@@ -616,15 +621,8 @@
                     </div>
                     ${array.length === 0 ? `<p class="text-center text-sm text-stone-400 py-10">Nenhum item cadastrado.</p>` : ''}
                     ${array.map((item, index) => `
-                        <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex items-center gap-3 transition-shadow hover:shadow-md">
-                            <div class="flex flex-col gap-1 shrink-0">
-                                <button onclick="moveItem(${index}, -1, '${arrayName}')" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
-                                    <i data-lucide="chevron-up" class="w-4 h-4 pointer-events-none"></i>
-                                </button>
-                                <button onclick="moveItem(${index}, 1, '${arrayName}')" ${index === array.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-stone-400"' : 'class="p-1 text-stone-500 hover:bg-stone-100 rounded active:scale-95"'}>
-                                    <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
-                                </button>
-                            </div>
+                        <div draggable="true" ondragstart="drag(event, ${index}, '${arrayName}')" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, ${index}, '${arrayName}')" class="drag-target bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex items-center gap-3 cursor-grab active:cursor-grabbing transition-all hover:shadow-md">
+                            <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
                             <div class="flex-1 min-w-0">${renderItem(item, index)}</div>
                         </div>
                     `).join('')}
@@ -939,7 +937,6 @@
                 const prod = state.produtos.find(p => p.nome === newData.item); 
                 newData.valor = (prod ? Number(prod.preco || 0) : 0) * newData.qtd;
                 
-                // Puxa automaticamente a foto e enquadramento do produto selecionado
                 if (prod) {
                     newData.img = prod.img || '';
                     newData.imgPosX = prod.imgPosX !== undefined ? prod.imgPosX : 50;
