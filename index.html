@@ -64,7 +64,7 @@
         </nav>
     </div>
 
-    <!-- FULLSCREEN IMAGE VIEWER MODAL (COM SWIPE E DOWNLOAD BLOB NATIVO) -->
+    <!-- FULLSCREEN IMAGE VIEWER MODAL -->
     <div id="overlay-fullscreen-img" class="fixed inset-0 bg-black/95 z-[70] hidden flex flex-col items-center justify-between p-6">
         <div class="w-full flex justify-between items-center z-10">
             <span id="fullscreen-counter" class="text-white/70 text-xs font-semibold">1/1</span>
@@ -79,7 +79,7 @@
 
         <div class="w-full flex flex-col items-center gap-3 z-10">
             <p id="fullscreen-title" class="text-white text-sm font-bold text-center truncate max-w-[280px]"></p>
-            <button onclick="downloadCurrentPhoto()" class="bg-brand text-white px-6 py-3.5 rounded-2xl font-bold text-xs flex items-center gap-2 active:scale-95 shadow-lg"><i data-lucide="download" class="w-4 h-4"></i> Baixar Foto no Aparelho (Qualidade Natural)</button>
+            <button onclick="downloadCurrentPhoto()" class="bg-brand text-white px-6 py-3.5 rounded-2xl font-bold text-xs flex items-center gap-2 active:scale-95 shadow-lg"><i data-lucide="download" class="w-4 h-4"></i> Baixar Foto</button>
         </div>
     </div>
 
@@ -188,7 +188,7 @@
     </div>
 
     <script>
-        // --- ESTADO GLOBAL & INDEXEDDB (ARMAZENAMENTO INTERNO AMPLIADO) ---
+        // --- ESTADO GLOBAL & INDEXEDDB ---
         const DB_NAME = 'SoulAtelierDB';
         const STORE_NAME = 'atelier_store';
         const STATE_KEY = 'main_state';
@@ -213,7 +213,6 @@
             insightSelectedIds: []
         };
 
-        // Variável global para armazenar temporariamente as fotos da pasta atual
         let activeFolderPhotos = [];
 
         function openDB() {
@@ -266,8 +265,6 @@
 
         async function loadState() {
             let parsed = await loadStateFromIDB();
-            
-            // Fallback: se não estiver no IndexedDB, tenta resgatar do localStorage antigo para migração automática
             if (!parsed) {
                 const keysToTry = ['soul_atelier_data_v15', 'soul_atelier_data_v14', 'soul_atelier_data_v13', 'soul_atelier_data_v12', 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
                 for (const k of keysToTry) {
@@ -292,12 +289,10 @@
                 if (parsed.insights) state.insights = parsed.insights;
             }
             if(!state.insights) state.insights = [];
-
-            // Salva logo no IndexedDB a base carregada
             await saveStateToIDB();
         }
 
-        // --- VISUALIZADOR DE IMAGEM EM TELA CHEIA (COM DOWNLOAD BLOB NATIVO) ---
+        // --- VISUALIZADOR DE IMAGEM EM TELA CHEIA ---
         let activeGalleryImages = [];
         let activeGalleryIndex = 0;
 
@@ -378,7 +373,7 @@
             }
         }
 
-        // --- SUPORTE A SWIPE (ARRASTAR PARA O LADO) NO MOBILE ---
+        // --- SWIPE GESTURE ---
         let touchStartX = 0;
         let touchEndX = 0;
 
@@ -398,15 +393,11 @@
 
         function handleSwipeGesture() {
             const minSwipeDistance = 50;
-            if (touchEndX < touchStartX - minSwipeDistance) {
-                changeGalleryImage(1);
-            }
-            if (touchEndX > touchStartX + minSwipeDistance) {
-                changeGalleryImage(-1);
-            }
+            if (touchEndX < touchStartX - minSwipeDistance) changeGalleryImage(1);
+            if (touchEndX > touchStartX + minSwipeDistance) changeGalleryImage(-1);
         }
 
-        // --- SISTEMA DE ARRASTO DA IMAGEM DO FORMULÁRIO ---
+        // --- DRAG IMAGEM FORM ---
         let dragData = { isDragging: false, startX: 0, startY: 0, initialX: 50, initialY: 50, el: null };
 
         function initImageDrag(imgId) {
@@ -453,25 +444,15 @@
             document.removeEventListener('mouseup', stopImageDrag); document.removeEventListener('touchend', stopImageDrag);
         }
 
-        // --- SISTEMA DE ARRASTAR E SOLTAR LISTAS (DRAG & DROP) ---
+        // --- DRAG & DROP LISTAS ---
         let draggedData = { index: null, arrayName: null };
         function drag(ev, index, arrayName) {
             draggedData = { index, arrayName };
             ev.dataTransfer.effectAllowed = 'move';
         }
-        function allowDrop(ev) {
-            ev.preventDefault();
-            ev.dataTransfer.dropEffect = 'move';
-        }
-        function dragEnter(ev) {
-            ev.preventDefault();
-            const card = ev.currentTarget;
-            card.classList.add('border-brand', 'bg-brand-light/20', 'scale-[1.01]');
-        }
-        function dragLeave(ev) {
-            const card = ev.currentTarget;
-            card.classList.remove('border-brand', 'bg-brand-light/20', 'scale-[1.01]');
-        }
+        function allowDrop(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; }
+        function dragEnter(ev) { ev.preventDefault(); ev.currentTarget.classList.add('border-brand', 'bg-brand-light/20', 'scale-[1.01]'); }
+        function dragLeave(ev) { ev.currentTarget.classList.remove('border-brand', 'bg-brand-light/20', 'scale-[1.01]'); }
         async function drop(ev, targetIndex, arrayName) {
             ev.preventDefault();
             document.querySelectorAll('.drag-target').forEach(el => el.classList.remove('border-brand', 'bg-brand-light/20', 'scale-[1.01]'));
@@ -484,7 +465,6 @@
             render();
         }
 
-        // --- AÇÃO RÁPIDA: MARCAR PEDIDO COMO ENTREGUE ---
         async function markOrderAsDelivered(event, id) {
             event.stopPropagation();
             const p = state.pedidos.find(item => item.id === id);
@@ -495,21 +475,56 @@
             }
         }
 
-        // --- SELEÇÃO MÚLTIPLA NA GALERIA ---
+        // --- SELEÇÃO MÚLTIPLA OTIMIZADA (SEM TRAVAMENTOS) ---
         function toggleInsightSelectionMode() {
             state.insightSelectionMode = !state.insightSelectionMode;
             state.insightSelectedIds = [];
             render();
         }
 
-        function togglePhotoSelection(id) {
+        function togglePhotoSelection(id, element) {
             const index = state.insightSelectedIds.indexOf(id);
+            const card = element.closest('.photo-card-container');
+            const indicator = card.querySelector('.photo-checkbox-indicator');
+            const icon = indicator.querySelector('i');
+
             if (index > -1) {
                 state.insightSelectedIds.splice(index, 1);
+                card.classList.remove('border-brand', 'bg-brand-light/10', 'shadow-md', 'ring-2', 'ring-brand/30');
+                card.classList.add('border-stone-100');
+                indicator.className = "photo-checkbox-indicator absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 text-transparent border border-stone-300 flex items-center justify-center shadow-sm transition-all";
+                icon.classList.add('opacity-0');
             } else {
                 state.insightSelectedIds.push(id);
+                card.classList.add('border-brand', 'bg-brand-light/10', 'shadow-md', 'ring-2', 'ring-brand/30');
+                card.classList.remove('border-stone-100');
+                indicator.className = "photo-checkbox-indicator absolute top-2 right-2 w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center shadow-sm transition-all";
+                icon.classList.remove('opacity-0');
             }
-            render();
+            updateFloatingSelectionBar();
+        }
+
+        function updateFloatingSelectionBar() {
+            let bar = document.getElementById('floating-selection-bar');
+            const count = state.insightSelectedIds.length;
+            if (count > 0) {
+                if (!bar) {
+                    const container = document.createElement('div');
+                    container.id = 'floating-selection-bar';
+                    container.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-md px-5 z-50 fade-in';
+                    container.innerHTML = `
+                        <button onclick="deleteSelectedInsightPhotos()" class="w-full bg-red-600 text-white py-3.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-2xl active:scale-95">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir Fotos Selecionadas (<span id="selected-count-num">${count}</span>)
+                        </button>
+                    `;
+                    document.body.appendChild(container);
+                    lucide.createIcons();
+                } else {
+                    document.getElementById('selected-count-num').innerText = count;
+                }
+            } else {
+                if (bar) bar.remove();
+            }
         }
 
         function deleteSelectedInsightPhotos() {
@@ -519,6 +534,8 @@
                     pasta.items = pasta.items.filter(i => !state.insightSelectedIds.includes(i.id));
                     state.insightSelectionMode = false;
                     state.insightSelectedIds = [];
+                    const bar = document.getElementById('floating-selection-bar');
+                    if (bar) bar.remove();
                     await saveState();
                     render();
                 }
@@ -545,7 +562,6 @@
         function addDynamicPart() { state.formState.tempPartes.push({ material: '', peso: '' }); renderDynamicParts(); }
         function removeDynamicPart(idx) { state.formState.tempPartes.splice(idx, 1); renderDynamicParts(); }
 
-        // --- MODAL DE CONFIRMAÇÃO ---
         let confirmCallback = null;
         function showCustomConfirm(message, callback) {
             document.getElementById('confirm-message').innerText = message || 'Tem certeza que deseja excluir este item permanentemente?';
@@ -561,10 +577,7 @@
                 const faturamentoBruto = entregues.reduce((acc, p) => acc + Number(p.valor || 0), 0);
                 const totalDespesas = state.financeiro.reduce((acc, t) => acc + Number(t.valor || 0), 0);
                 const faturamentoLiquido = faturamentoBruto - totalDespesas;
-
-                const pendentesEntregas = state.pedidos
-                    .filter(p => p.status !== 'Entregue' && p.dataEntrega)
-                    .sort((a, b) => new Date(a.dataEntrega) - new Date(b.dataEntrega));
+                const pendentesEntregas = state.pedidos.filter(p => p.status !== 'Entregue' && p.dataEntrega).sort((a, b) => new Date(a.dataEntrega) - new Date(b.dataEntrega));
 
                 return `
                 <div class="px-5 space-y-5 fade-in pt-2">
@@ -573,7 +586,6 @@
                         <p class="text-sm text-stone-500 mt-1">${entregues.length} pedidos entregues</p>
                     </div>
 
-                    <!-- Faturamento -->
                     <div class="w-full text-left bg-gradient-to-br from-[#A84A5C] to-[#8A3A4C] rounded-[28px] p-6 text-white shadow-lg">
                         <p class="text-xs uppercase tracking-[0.15em] opacity-80 mb-1">Faturamento Líquido</p>
                         <p class="font-heading text-3xl font-bold">R$ ${faturamentoLiquido.toFixed(2).replace('.',',')}</p>
@@ -583,7 +595,6 @@
                         </div>
                     </div>
 
-                    <!-- Alerta de Próximas Entregas -->
                     <div>
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="font-heading font-bold text-sm text-stone-800 flex items-center gap-1.5">
@@ -623,7 +634,6 @@
                         `}
                     </div>
                     
-                    <!-- Ideias e Arquivos (Full Width) -->
                     <button onclick="navigate('insights')" class="w-full bg-gradient-to-br from-stone-800 to-stone-900 text-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform relative overflow-hidden text-left">
                         <div class="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-4 -translate-y-4">
                             <i data-lucide="lightbulb" class="w-24 h-24"></i>
@@ -632,7 +642,6 @@
                         <span class="font-bold text-sm">Ideias e Arquivos</span>
                     </button>
 
-                    <!-- Receitas e Custos (Lado a Lado) -->
                     <div class="grid grid-cols-2 gap-3 pb-4">
                         <button onclick="navigate('receitas')" class="bg-white rounded-[22px] p-5 shadow-sm border border-stone-100 flex flex-col gap-3 active:scale-95 transition-transform text-left"><div class="w-11 h-11 rounded-2xl bg-[#EBE9DE] text-[#8A7A3F] flex items-center justify-center"><i data-lucide="book-open" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Receitas</span></button>
                         <button onclick="navigate('custos')" class="bg-white rounded-[22px] p-5 shadow-sm border border-stone-100 flex flex-col gap-3 active:scale-95 transition-transform text-left"><div class="w-11 h-11 rounded-2xl bg-[#EFE2DE] text-[#B65D41] flex items-center justify-center"><i data-lucide="scale" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Custos</span></button>
@@ -665,7 +674,6 @@
                 if(!pasta) { setTimeout(() => navigate('insights'), 10); return ''; }
                 const fotos = (pasta.items || []).filter(i => i.tipo !== 'link');
                 const links = (pasta.items || []).filter(i => i.tipo === 'link');
-
                 activeFolderPhotos = fotos;
 
                 return `
@@ -693,13 +701,13 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     ${fotos.map((item, idx) => {
                                         const isSelected = state.insightSelectedIds.includes(item.id);
-                                        const clickAction = state.insightSelectionMode ? `togglePhotoSelection(${item.id})` : `openFolderGallery(${idx})`;
+                                        const clickAction = state.insightSelectionMode ? `togglePhotoSelection(${item.id}, this)` : `openFolderGallery(${idx})`;
                                         return `
-                                            <div class="bg-white rounded-2xl p-2 border ${isSelected ? 'border-brand bg-brand-light/10 shadow-md ring-2 ring-brand/30' : 'border-stone-100 shadow-sm'} relative group overflow-hidden transition-all">
+                                            <div class="photo-card-container bg-white rounded-2xl p-2 border ${isSelected ? 'border-brand bg-brand-light/10 shadow-md ring-2 ring-brand/30' : 'border-stone-100 shadow-sm'} relative group overflow-hidden transition-all">
                                                 <div class="w-full h-36 bg-stone-100 rounded-xl overflow-hidden relative cursor-pointer" onclick="${clickAction}">
                                                     <img src="${item.conteudo}" class="w-full h-full object-cover" style="object-position: ${item.imgPosX||50}% ${item.imgPosY||50}%;">
                                                     ${state.insightSelectionMode ? `
-                                                        <div class="absolute top-2 right-2 w-7 h-7 rounded-full ${isSelected ? 'bg-brand text-white' : 'bg-white/80 text-transparent border border-stone-300'} flex items-center justify-center shadow-sm transition-all">
+                                                        <div class="photo-checkbox-indicator absolute top-2 right-2 w-7 h-7 rounded-full ${isSelected ? 'bg-brand text-white' : 'bg-white/80 text-transparent border border-stone-300'} flex items-center justify-center shadow-sm transition-all">
                                                             <i data-lucide="check" class="w-4 h-4 ${isSelected ? '' : 'opacity-0'}"></i>
                                                         </div>
                                                     ` : ''}
@@ -735,14 +743,6 @@
 
                         ${!(pasta.items?.length) ? '<p class="text-center text-sm text-stone-400 py-6">Nenhum item salvo nesta pasta.</p>' : ''}
                     </div>
-
-                    ${state.insightSelectionMode && state.insightSelectedIds.length > 0 ? `
-                        <div class="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-md px-5 z-50">
-                            <button onclick="deleteSelectedInsightPhotos()" class="w-full bg-red-600 text-white py-3.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-2xl active:scale-95">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir Fotos Selecionadas (${state.insightSelectedIds.length})
-                            </button>
-                        </div>
-                    ` : ''}
                 </div>
                 `;
             },
@@ -913,7 +913,6 @@
             `;
         }
 
-        // --- NAVEGAÇÃO E RENDER ---
         function render() {
             const contentDiv = document.getElementById('app-content');
             if(contentDiv) {
@@ -943,6 +942,8 @@
             state.currentView = view; 
             state.insightSelectionMode = false;
             state.insightSelectedIds = [];
+            const bar = document.getElementById('floating-selection-bar');
+            if (bar) bar.remove();
             closeAllModals(); 
             render(); 
         }
@@ -950,10 +951,12 @@
             state.currentInsightFolderId = id; 
             state.insightSelectionMode = false;
             state.insightSelectedIds = [];
+            const bar = document.getElementById('floating-selection-bar');
+            if (bar) bar.remove();
             navigate('insight_folder'); 
         }
 
-        // --- DEFINIÇÃO DOS FORMULÁRIOS ---
+        // --- DEFINIÇÃO DOS FORMULÁRIOS COM BOTÕES SIMPLIFICADOS ---
         const formDefinitions = {
             perfil: { title: 'Editar Perfil', fields: [ { id: 'f-art', label: 'Nome do Artesão', type: 'text', key: 'artisanName' }, { id: 'f-ate', label: 'Nome do Ateliê', type: 'text', key: 'atelierName' }, { id: 'f-img', label: 'Foto de Perfil', type: 'file', key: 'avatar' } ] },
             produto: { title: 'Produto', fields: [ { id: 'f-nome', label: 'Nome da Peça / Produto', type: 'text', key: 'nome' }, { id: 'f-preco', label: 'Preço de Venda (R$)', type: 'number', key: 'preco' }, { id: 'f-tamanho', label: 'Tamanho / Medidas', type: 'text', key: 'tamanho' }, { id: 'f-partes', label: 'Partes e Materiais', type: 'dynamic_parts', key: 'partes' }, { id: 'f-img', label: 'Foto do Produto', type: 'file', key: 'img' } ] },
@@ -964,10 +967,9 @@
             custo: { title: 'Calculadora de Custos', fields: [ { id: 'c-nome', label: 'Nome da Peça', type: 'text', key: 'nome' }, { id: 'c-precoRolo', label: 'Preço no Rolo (R$)', type: 'number', key: 'precoRolo' }, { id: 'c-pesoRolo', label: 'Peso Total Rolo (g)', type: 'number', key: 'pesoRolo' }, { id: 'c-pesoGasto', label: 'Peso Gasto na Peça (g)', type: 'number', key: 'pesoGasto' }, { id: 'c-extras', label: 'Custos Extras (Caixa) (R$)', type: 'number', key: 'extras' }, { id: 'c-horas', label: 'Tempo de Trabalho (h)', type: 'number', key: 'horas' }, { id: 'c-valorHora', label: 'Valor da Hora (R$)', type: 'number', key: 'valorHora' } ] },
             pasta_insight: { title: 'Pasta de Ideias', fields: [ { id: 'f-nome', label: 'Nome da Pasta', type: 'text', key: 'nome' } ] },
             insight_link: { title: 'Salvar Link', fields: [ { id: 'f-titulo', label: 'Título / Descrição', type: 'text', key: 'titulo' }, { id: 'f-conteudo', label: 'URL / Link', type: 'text', key: 'conteudo' } ] },
-            insight_image: { title: 'Salvar Fotos', fields: [ { id: 'f-img', label: 'Selecionar Fotos (Qualidade Original)', type: 'multiple_files', key: 'conteudo' } ] }
+            insight_image: { title: 'Salvar Fotos', fields: [ { id: 'f-img', label: 'Selecionar Fotos', type: 'multiple_files', key: 'conteudo' } ] }
         };
 
-        // --- SELETOR CUSTOMIZADO ---
         function openCustomSelect(inputId, type) {
             let availableProducts = state.produtos;
             const checkboxEl = document.getElementById('f-venderEstoque');
@@ -996,7 +998,6 @@
         }
         function closeCustomSelect() { document.getElementById('overlay-custom-select').classList.add('hidden'); }
 
-        // --- RENDERIZAR FORMULÁRIO ---
         function openForm(type, id = null) {
             closeAllModals();
             state.formState = { type, editingId: id, tempImage: null, tempImagesMultiple: [], tempImgPosX: 50, tempImgPosY: 50, tempPartes: [] };
@@ -1056,7 +1057,7 @@
                         <div class="flex flex-col gap-2">
                             <div id="multiple-preview-container" class="grid grid-cols-3 gap-2 ${val ? '' : 'hidden'}"></div>
                             <label class="bg-stone-50 border border-stone-200 text-stone-600 font-bold text-xs py-4 rounded-xl flex justify-center items-center gap-2 cursor-pointer active:scale-95 transition-transform hover:bg-stone-100">
-                                <i data-lucide="upload" class="w-4 h-4"></i> Selecionar Fotos (Qualidade Original)
+                                <i data-lucide="upload" class="w-4 h-4"></i> Salvar Foto
                                 <input type="file" accept="image/*" multiple onchange="handleMultipleImagesUpload(event)" class="hidden">
                             </label>
                         </div>
@@ -1076,7 +1077,7 @@
                                 </div>
                             </div>
                             <label class="bg-stone-50 border border-stone-200 text-stone-600 font-bold text-xs py-3 rounded-xl flex justify-center items-center gap-2 cursor-pointer active:scale-95 transition-transform hover:bg-stone-100">
-                                <i data-lucide="upload" class="w-4 h-4"></i> ${val ? 'Trocar Foto' : 'Anexar Foto (Qualidade Original)'}
+                                <i data-lucide="upload" class="w-4 h-4"></i> ${val ? 'Trocar Foto' : 'Salvar Foto'}
                                 <input type="file" accept="image/*" onchange="handleImageUpload(event, '${f.id}-preview', '${f.id}-preview-container')" class="hidden">
                             </label>
                         </div>
@@ -1106,7 +1107,6 @@
 
         function closeFormModal() { document.getElementById('overlay-form').classList.add('hidden'); }
 
-        // CARREGAMENTO DE MÚLTIPLAS FOTOS EM QUALIDADE NATURAL
         function handleMultipleImagesUpload(event) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -1130,7 +1130,6 @@
             });
         }
 
-        // CARREGAMENTO DE FOTO ÚNICA EM QUALIDADE NATURAL
         function handleImageUpload(event, previewId, containerId) {
             const file = event.target.files[0];
             if (file) {
@@ -1149,7 +1148,6 @@
             }
         }
 
-        // --- DETALHES COM FOTO CLICÁVEL ---
         function openRecipeDetail(id) {
             closeAllModals(); state.currentRecipeViewId = id; const r = state.receitas.find(item => item.id === id); if (!r) return;
             document.getElementById('recipe-detail-body').innerHTML = `
@@ -1222,7 +1220,6 @@
             document.getElementById('overlay-custom-select').classList.add('hidden');
         }
 
-        // --- SUBMIT E DELETE ---
         async function submitForm() {
             const { type, editingId, tempImage, tempImagesMultiple, tempImgPosX, tempImgPosY, tempPartes } = state.formState;
             const def = formDefinitions[type];
@@ -1315,7 +1312,6 @@
             });
         }
 
-        // Inicialização assíncrona do banco de dados e renderização do app
         async function initApp() {
             await loadState();
             render();
