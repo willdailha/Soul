@@ -54,16 +54,17 @@
         <!-- Main Content Area -->
         <main id="app-content" class="flex-1 overflow-y-auto no-scrollbar pb-24"></main>
 
-        <!-- Bottom Navigation (Reformulada: Mais limpa e sem botão central) -->
-        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-stone-200 pb-safe pt-2 px-2 flex items-center justify-around z-40">
-            <button onclick="navigate('home')" class="nav-btn flex flex-col items-center gap-1 py-2 px-4 text-[10px] font-medium text-brand" data-target="home"><i data-lucide="house" class="w-6 h-6 pointer-events-none"></i><span>Início</span></button>
-            <button onclick="navigate('pedidos')" class="nav-btn flex flex-col items-center gap-1 py-2 px-4 text-[10px] font-medium text-stone-400" data-target="pedidos"><i data-lucide="box" class="w-6 h-6 pointer-events-none"></i><span>Pedidos</span></button>
-            <button onclick="navigate('estoque')" class="nav-btn flex flex-col items-center gap-1 py-2 px-4 text-[10px] font-medium text-stone-400" data-target="estoque"><i data-lucide="package" class="w-6 h-6 pointer-events-none"></i><span>Estoque</span></button>
-            <button onclick="navigate('produtos')" class="nav-btn flex flex-col items-center gap-1 py-2 px-4 text-[10px] font-medium text-stone-400" data-target="produtos"><i data-lucide="tag" class="w-6 h-6 pointer-events-none"></i><span>Produtos</span></button>
+        <!-- Bottom Navigation com 5 Botões -->
+        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-stone-200 pb-safe pt-2 px-1 flex items-center justify-between z-40">
+            <button onclick="navigate('home')" class="nav-btn flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium text-brand" data-target="home"><i data-lucide="house" class="w-6 h-6 pointer-events-none"></i><span>Início</span></button>
+            <button onclick="navigate('pedidos')" class="nav-btn flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium text-stone-400" data-target="pedidos"><i data-lucide="box" class="w-6 h-6 pointer-events-none"></i><span>Pedidos</span></button>
+            <button onclick="navigate('estoque')" class="nav-btn flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium text-stone-400" data-target="estoque"><i data-lucide="package" class="w-6 h-6 pointer-events-none"></i><span>Estoque</span></button>
+            <button onclick="navigate('produtos')" class="nav-btn flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium text-stone-400" data-target="produtos"><i data-lucide="tag" class="w-6 h-6 pointer-events-none"></i><span>Produtos</span></button>
+            <button onclick="navigate('financeiro')" class="nav-btn flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium text-stone-400" data-target="financeiro"><i data-lucide="wallet" class="w-6 h-6 pointer-events-none"></i><span>Despesas</span></button>
         </nav>
     </div>
 
-    <!-- OVERLAY 2: Formulário Centralizado -->
+    <!-- OVERLAY: Formulário Centralizado -->
     <div id="overlay-form" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div id="modal-form" class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
             <div class="flex justify-between items-center mb-4 shrink-0">
@@ -80,7 +81,20 @@
         </div>
     </div>
 
-    <!-- OVERLAY 3: Visualizador de Receita Detalhada -->
+    <!-- OVERLAY: Seletor de Produtos Customizado (Bottom Sheet) -->
+    <div id="overlay-custom-select" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-end justify-center pb-safe">
+        <div class="bg-white w-full max-w-md rounded-t-[28px] p-6 shadow-2xl flex flex-col max-h-[70vh]">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 class="font-heading text-lg font-bold">Selecione um Produto</h3>
+                <button onclick="closeCustomSelect()" class="p-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="x" class="w-4 h-4 pointer-events-none"></i></button>
+            </div>
+            <div id="custom-select-list" class="overflow-y-auto no-scrollbar flex-1 pb-4 space-y-2">
+                <!-- Opções serão injetadas aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais de Detalhes -->
     <div id="overlay-recipe" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
             <div class="flex justify-between items-center mb-4 shrink-0">
@@ -96,7 +110,6 @@
         </div>
     </div>
 
-    <!-- OVERLAY 4: Visualizador de Pedido Detalhado -->
     <div id="overlay-order" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
             <div class="flex justify-between items-center mb-4 shrink-0">
@@ -112,7 +125,6 @@
         </div>
     </div>
 
-    <!-- OVERLAY 5: Visualizador de Estoque Detalhado -->
     <div id="overlay-stock" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
             <div class="flex justify-between items-center mb-4 shrink-0">
@@ -128,7 +140,6 @@
         </div>
     </div>
 
-    <!-- OVERLAY 6: Visualizador de Produto Detalhado -->
     <div id="overlay-product" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md h-[85vh] rounded-[28px] p-6 flex flex-col shadow-2xl">
             <div class="flex justify-between items-center mb-4 shrink-0">
@@ -144,7 +155,7 @@
         </div>
     </div>
 
-    <!-- OVERLAY 7: Modal de Confirmação Personalizado -->
+    <!-- Modal de Confirmação -->
     <div id="overlay-confirm" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-[28px] p-6 flex flex-col shadow-2xl text-center">
             <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
@@ -160,8 +171,8 @@
     </div>
 
     <script>
-        // --- ESTADO GLOBAL & LOCAL STORAGE ROBUSTO ---
-        const STORAGE_KEY = 'soul_atelier_data_v4';
+        // --- ESTADO GLOBAL & LOCAL STORAGE ---
+        const STORAGE_KEY = 'soul_atelier_data_v5';
 
         const state = {
             currentView: 'home',
@@ -172,11 +183,13 @@
             custos: [],
             financeiro: [],
             produtos: [],
+            insights: [], // Novo Módulo
             formState: { type: null, editingId: null, tempImage: null, tempImgPos: 'center' },
             currentRecipeViewId: null,
             currentOrderId: null,
             currentStockId: null,
-            currentProductViewId: null
+            currentProductViewId: null,
+            currentInsightFolderId: null
         };
 
         function saveState() {
@@ -184,12 +197,12 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
             } catch (e) {
                 console.error("Erro ao salvar no localStorage:", e);
-                alert("Atenção: O armazenamento ficou cheio devido ao tamanho das fotos. Tente usar fotos mais leves.");
+                alert("Atenção: O armazenamento ficou cheio devido ao tamanho das fotos.");
             }
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v3', 'soul_atelier_data_v2', 'soul_atelier_data_v1', 'soul_atelier_state_v4', 'soul_atelier_state_v3'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v4', 'soul_atelier_data_v3', 'soul_atelier_data_v2', 'soul_atelier_data_v1', 'soul_atelier_state_v4'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -202,17 +215,19 @@
                         if (parsed.custos) state.custos = parsed.custos;
                         if (parsed.financeiro) state.financeiro = parsed.financeiro;
                         if (parsed.produtos) state.produtos = parsed.produtos;
+                        if (parsed.insights) state.insights = parsed.insights;
                         break;
                     } catch(e) {
                         console.error("Erro ao carregar chave", k, e);
                     }
                 }
             }
+            if(!state.insights) state.insights = [];
         }
 
         loadState();
 
-        // --- MODAL DE CONFIRMAÇÃO CUSTOMIZADO ---
+        // --- MODAL DE CONFIRMAÇÃO ---
         let confirmCallback = null;
         function showCustomConfirm(message, callback) {
             document.getElementById('confirm-message').innerText = message || 'Tem certeza que deseja excluir este item permanentemente?';
@@ -229,19 +244,10 @@
             closeConfirmModal();
         };
 
-        // --- SISTEMA DE DRAG & DROP (REORGANIZAR LISTAS) ---
+        // --- SISTEMA DE DRAG & DROP ---
         let draggedData = { index: null, arrayName: null };
-
-        function drag(ev, index, arrayName) {
-            draggedData = { index, arrayName };
-            ev.dataTransfer.effectAllowed = 'move';
-        }
-
-        function allowDrop(ev) {
-            ev.preventDefault();
-            ev.dataTransfer.dropEffect = 'move';
-        }
-
+        function drag(ev, index, arrayName) { draggedData = { index, arrayName }; ev.dataTransfer.effectAllowed = 'move'; }
+        function allowDrop(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; }
         function drop(ev, targetIndex, arrayName) {
             ev.preventDefault();
             if (draggedData.arrayName !== arrayName || draggedData.index === null || draggedData.index === targetIndex) return;
@@ -253,7 +259,6 @@
             render();
         }
 
-        // --- MAPEAR CLASSE CSS PARA POSIÇÃO DA IMAGEM ---
         function getPosClass(pos) {
             if (pos === 'top') return 'object-top';
             if (pos === 'bottom') return 'object-bottom';
@@ -286,14 +291,84 @@
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="navigate('pedidos')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#F4E3E1] text-[#A84A5C] flex items-center justify-center"><i data-lucide="package" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Pedidos</span></button>
-                        <button onclick="navigate('produtos')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#EBE9DE] text-[#8A7A3F] flex items-center justify-center"><i data-lucide="tag" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Produtos</span></button>
-                        <button onclick="navigate('estoque')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#E4E9E1] text-[#54624D] flex items-center justify-center"><i data-lucide="box" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Estoque</span></button>
-                        <button onclick="navigate('financeiro')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center"><i data-lucide="wallet" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Despesas</span></button>
+                        <button onclick="navigate('insights')" class="bg-gradient-to-br from-stone-800 to-stone-900 text-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform col-span-2 relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-4 -translate-y-4">
+                                <i data-lucide="lightbulb" class="w-24 h-24"></i>
+                            </div>
+                            <div class="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner border border-white/10"><i data-lucide="lightbulb" class="text-white pointer-events-none w-5 h-5"></i></div>
+                            <span class="font-bold text-sm">Insights & Inspirações</span>
+                        </button>
+                        
                         <button onclick="navigate('receitas')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#EBE9DE] text-[#8A7A3F] flex items-center justify-center"><i data-lucide="book-open" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Receitas</span></button>
                         <button onclick="navigate('custos')" class="bg-white rounded-[22px] p-5 shadow-sm flex flex-col gap-3 active:scale-95 transition-transform"><div class="w-11 h-11 rounded-2xl bg-[#EFE2DE] text-[#B65D41] flex items-center justify-center"><i data-lucide="scale" class="pointer-events-none"></i></div><span class="font-bold text-sm text-stone-800">Custos</span></button>
                     </div>
                 </div>`;
+            },
+            
+            // VIEWS INSIGHTS
+            insights: () => `
+                <div class="px-5 space-y-4 fade-in pt-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <button onclick="navigate('home')" class="p-2 -ml-2 bg-stone-100 rounded-full active:scale-95"><i data-lucide="arrow-left" class="w-5 h-5 text-stone-600"></i></button>
+                        <h2 class="font-heading text-2xl font-bold text-stone-900 flex-1 ml-2">Insights</h2>
+                        <button onclick="openForm('pasta_insight')" class="bg-stone-900 text-white px-3 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform flex items-center gap-1 shadow-sm"><i data-lucide="folder-plus" class="w-4 h-4"></i> Pasta</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pb-8">
+                        ${(state.insights || []).map((pasta) => `
+                            <div onclick="openInsightFolder(${pasta.id})" class="bg-white rounded-[20px] p-4 border border-stone-100 shadow-sm active:scale-95 transition-transform cursor-pointer">
+                                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center mb-3"><i data-lucide="folder" class="w-5 h-5"></i></div>
+                                <h4 class="font-bold text-stone-800 text-sm truncate mb-1">${pasta.nome}</h4>
+                                <p class="text-[10px] text-stone-500 font-medium">${pasta.items?.length || 0} itens salvos</p>
+                            </div>
+                        `).join('')}
+                        ${!(state.insights?.length) ? '<div class="col-span-2 text-center text-sm text-stone-400 py-12"><i data-lucide="folder-open" class="w-12 h-12 mx-auto text-stone-200 mb-3"></i>Crie pastas para guardar ideias,<br>receitas e artes.</div>' : ''}
+                    </div>
+                </div>
+            `,
+
+            insight_folder: () => {
+                const pasta = state.insights.find(p => p.id === state.currentInsightFolderId);
+                if(!pasta) { setTimeout(() => navigate('insights'), 10); return ''; }
+                return `
+                <div class="px-5 space-y-4 fade-in pt-2 pb-10">
+                    <div class="flex justify-between items-center mb-6">
+                        <button onclick="navigate('insights')" class="p-2 -ml-2 bg-stone-100 rounded-full active:scale-95 shrink-0"><i data-lucide="arrow-left" class="w-5 h-5 text-stone-600"></i></button>
+                        <h2 class="font-heading text-xl font-bold text-stone-900 truncate flex-1 ml-3">${pasta.nome}</h2>
+                        <button onclick="openForm('pasta_insight', ${pasta.id})" class="p-2 bg-stone-100 text-stone-600 rounded-full active:scale-95 shrink-0 ml-2"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                    </div>
+                    <div class="flex gap-3 mb-6">
+                        <button onclick="openForm('insight_image')" class="flex-1 bg-stone-900 text-white py-3 rounded-xl text-xs font-bold active:scale-95 flex flex-col items-center justify-center gap-1 shadow-md"><i data-lucide="image" class="w-5 h-5 mb-1"></i> Nova Foto</button>
+                        <button onclick="openForm('insight_link')" class="flex-1 bg-white border border-stone-200 text-stone-700 py-3 rounded-xl text-xs font-bold active:scale-95 flex flex-col items-center justify-center gap-1 shadow-sm"><i data-lucide="link" class="w-5 h-5 mb-1"></i> Novo Link</button>
+                    </div>
+                    <div class="space-y-4">
+                        ${(pasta.items || []).map(item => {
+                            if (item.tipo === 'link') {
+                                return `
+                                <div class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex gap-3 items-center relative">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"><i data-lucide="link" class="w-5 h-5"></i></div>
+                                    <div class="flex-1 min-w-0 pr-6">
+                                        <h4 class="font-bold text-stone-800 text-sm truncate mb-0.5">${item.titulo}</h4>
+                                        <a href="${item.conteudo}" target="_blank" class="text-xs text-blue-500 truncate block hover:underline">${item.conteudo}</a>
+                                    </div>
+                                    <button onclick="openForm('insight_link', ${item.id})" class="absolute right-3 top-3 p-2 text-stone-300 hover:text-stone-500 active:scale-95"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                </div>
+                                `;
+                            } else {
+                                return `
+                                <div class="bg-white rounded-2xl p-2 border border-stone-100 shadow-sm relative group">
+                                    <div class="w-full h-48 bg-stone-100 rounded-xl overflow-hidden relative mb-2">
+                                        <img src="${item.conteudo}" class="w-full h-full object-cover">
+                                    </div>
+                                    <h4 class="font-bold text-stone-800 text-sm px-2 pb-1">${item.titulo}</h4>
+                                    <button onclick="openForm('insight_image', ${item.id})" class="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur rounded-full text-stone-700 shadow-sm active:scale-95"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                </div>
+                                `;
+                            }
+                        }).join('')}
+                        ${!(pasta.items?.length) ? '<p class="text-center text-sm text-stone-400 py-6">Nenhum item salvo nesta pasta.</p>' : ''}
+                    </div>
+                </div>
+                `;
             },
 
             pedidos: () => generateListHTML('Pedidos', 'pedidos', 'pedido', (p) => {
@@ -303,7 +378,6 @@
                 else if (p.status === 'Entregue') statusBg = 'bg-green-100 text-green-600';
 
                 const imgPosClass = getPosClass(p.imgPos);
-
                 return `
                 <div class="flex gap-4 cursor-pointer items-center w-full" onclick="openOrderDetail(${p.id})">
                     ${p.img ? `<img src="${p.img}" class="w-20 h-20 rounded-xl object-cover ${imgPosClass} shrink-0 border border-stone-100">` : `<div class="w-20 h-20 rounded-xl bg-stone-100 flex items-center justify-center text-stone-300 shrink-0"><i data-lucide="image" class="pointer-events-none"></i></div>`}
@@ -370,14 +444,8 @@
                         <button onclick="openForm('custo')" class="bg-brand text-white px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform flex items-center gap-1 shadow-sm"><i data-lucide="plus" class="w-4 h-4 pointer-events-none"></i> Calcular</button>
                     </div>
                     ${state.custos.map((c, index) => `
-                        <div draggable="true" 
-                             ondragstart="drag(event, ${index}, 'custos')" 
-                             ondragover="allowDrop(event)" 
-                             ondrop="drop(event, ${index}, 'custos')"
-                             class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative flex items-start gap-3 cursor-grab active:cursor-grabbing">
-                            <div class="flex items-center justify-center shrink-0 pt-1 pr-1 text-stone-300">
-                                <i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i>
-                            </div>
+                        <div draggable="true" ondragstart="drag(event, ${index}, 'custos')" ondragover="allowDrop(event)" ondrop="drop(event, ${index}, 'custos')" class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm relative flex items-start gap-3 cursor-grab active:cursor-grabbing">
+                            <div class="flex items-center justify-center shrink-0 pt-1 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
                             <div class="flex-1 min-w-0">
                                 <button onclick="openForm('custo', ${c.id})" class="absolute top-4 right-4 text-stone-400 active:scale-95"><i data-lucide="edit-3" class="w-4 h-4 pointer-events-none"></i></button>
                                 <h4 class="font-bold text-stone-800 mb-3">${c.nome}</h4>
@@ -387,8 +455,7 @@
                                     <div class="flex justify-between"><span>Mão de Obra (${c.horas}h x R$${c.valorHora})</span><span>R$ ${(c.horas*c.valorHora).toFixed(2).replace('.', ',')}</span></div>
                                 </div>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs font-bold uppercase">Custo Total da Peça</span>
-                                    <span class="text-lg font-heading font-bold text-brand">R$ ${c.custoTotal.toFixed(2).replace('.', ',')}</span>
+                                    <span class="text-xs font-bold uppercase">Custo Total da Peça</span><span class="text-lg font-heading font-bold text-brand">R$ ${c.custoTotal.toFixed(2).replace('.', ',')}</span>
                                 </div>
                             </div>
                         </div>
@@ -410,15 +477,15 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="col-span-2 ${saldoLiquido >= 0 ? 'bg-green-50' : 'bg-red-50'} rounded-[24px] p-6 text-center">
-                            <p class="text-xs font-medium text-stone-500 uppercase">Saldo Líquido (Entradas - Despesas)</p>
+                            <p class="text-xs font-medium text-stone-500 uppercase">Saldo Líquido</p>
                             <h3 class="text-3xl font-bold ${saldoLiquido >= 0 ? 'text-green-600' : 'text-red-600'}">R$ ${saldoLiquido.toFixed(2).replace('.',',')}</h3>
                         </div>
                         <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
-                            <span class="text-xs font-medium text-stone-500"><i data-lucide="trending-up" class="inline w-3 h-3 text-green-500 mr-1 pointer-events-none"></i>Entradas (Entregues)</span>
+                            <span class="text-xs font-medium text-stone-500"><i data-lucide="trending-up" class="inline w-3 h-3 text-green-500 mr-1 pointer-events-none"></i>Entradas</span>
                             <p class="text-lg font-bold text-green-600">R$ ${entradasTotais.toFixed(2).replace('.',',')}</p>
                         </div>
                         <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-100">
-                            <span class="text-xs font-medium text-stone-500"><i data-lucide="trending-down" class="inline w-3 h-3 text-red-500 mr-1 pointer-events-none"></i>Total Despesas</span>
+                            <span class="text-xs font-medium text-stone-500"><i data-lucide="trending-down" class="inline w-3 h-3 text-red-500 mr-1 pointer-events-none"></i>Despesas</span>
                             <p class="text-lg font-bold text-red-600">R$ ${saidasTotais.toFixed(2).replace('.',',')}</p>
                         </div>
                     </div>
@@ -426,17 +493,11 @@
                         <div class="flex justify-between items-end mb-4"><h3 class="font-bold">Registro de Despesas</h3></div>
                         ${state.financeiro.length === 0 ? '<p class="text-center text-sm text-stone-400 py-6">Nenhuma despesa cadastrada.</p>' : ''}
                         ${state.financeiro.map((t, index) => `
-                            <div draggable="true" 
-                                 ondragstart="drag(event, ${index}, 'financeiro')" 
-                                 ondragover="allowDrop(event)" 
-                                 ondrop="drop(event, ${index}, 'financeiro')"
-                                 class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 border border-stone-100 gap-3 cursor-grab active:cursor-grabbing">
-                                <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300">
-                                    <i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i>
-                                </div>
+                            <div draggable="true" ondragstart="drag(event, ${index}, 'financeiro')" ondragover="allowDrop(event)" ondrop="drop(event, ${index}, 'financeiro')" class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm mb-3 border border-stone-100 gap-3 cursor-grab active:cursor-grabbing">
+                                <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
                                 <div class="flex items-center justify-between flex-1 min-w-0 cursor-pointer active:scale-95 transition-transform" onclick="openForm('financeiro', ${t.id})">
                                     <div class="flex gap-3 items-center min-w-0">
-                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-100 text-red-600"><i data-lucide="arrow-down-right" class="w-5 h-5 pointer-events-none"></i></div>
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-50 text-red-600"><i data-lucide="arrow-down-right" class="w-5 h-5 pointer-events-none"></i></div>
                                         <div class="min-w-0"><p class="text-sm font-bold text-stone-800 truncate">${t.categoria}</p><p class="text-xs text-stone-500 truncate">${t.desc}</p></div>
                                     </div>
                                     <div class="text-right shrink-0 pl-2">
@@ -463,17 +524,9 @@
                     </div>
                     ${array.length === 0 ? `<p class="text-center text-sm text-stone-400 py-10">Nenhum item cadastrado.</p>` : ''}
                     ${array.map((item, index) => `
-                        <div draggable="true" 
-                             ondragstart="drag(event, ${index}, '${arrayName}')" 
-                             ondragover="allowDrop(event)" 
-                             ondrop="drop(event, ${index}, '${arrayName}')"
-                             class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex items-center gap-3 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md">
-                            <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300">
-                                <i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                ${renderItem(item, index)}
-                            </div>
+                        <div draggable="true" ondragstart="drag(event, ${index}, '${arrayName}')" ondragover="allowDrop(event)" ondrop="drop(event, ${index}, '${arrayName}')" class="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm flex items-center gap-3 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md">
+                            <div class="flex items-center justify-center shrink-0 pr-1 text-stone-300"><i data-lucide="grip-vertical" class="w-5 h-5 pointer-events-none"></i></div>
+                            <div class="flex-1 min-w-0">${renderItem(item, index)}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -486,8 +539,10 @@
             if(contentDiv) {
                 contentDiv.innerHTML = views[state.currentView]();
                 updateHeader();
+                
+                const activeTarget = state.currentView.startsWith('insight') ? 'home' : state.currentView;
                 document.querySelectorAll('.nav-btn').forEach(btn => {
-                    const isActive = btn.dataset.target === state.currentView;
+                    const isActive = btn.dataset.target === activeTarget;
                     btn.classList.toggle('text-brand', isActive);
                     btn.classList.toggle('text-stone-400', !isActive);
                 });
@@ -505,151 +560,84 @@
             }
         }
 
-        function navigate(view) { 
-            state.currentView = view; 
-            closeAllModals(); 
-            render(); 
-        }
+        function navigate(view) { state.currentView = view; closeAllModals(); render(); }
+        function openInsightFolder(id) { state.currentInsightFolderId = id; navigate('insight_folder'); }
 
         // --- DEFINIÇÃO DOS FORMULÁRIOS ---
         const formDefinitions = {
-            perfil: {
-                title: 'Editar Perfil',
-                fields: [
-                    { id: 'f-art', label: 'Nome do Artesão', type: 'text', key: 'artisanName' },
-                    { id: 'f-ate', label: 'Nome do Ateliê', type: 'text', key: 'atelierName' },
-                    { id: 'f-img', label: 'Foto de Perfil', type: 'file', key: 'avatar' },
-                    { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'avatarPos' }
-                ]
-            },
-            produto: {
-                title: 'Produto',
-                fields: [
-                    { id: 'f-nome', label: 'Nome da Peça / Produto', type: 'text', key: 'nome' },
-                    { id: 'f-preco', label: 'Preço de Venda (R$)', type: 'number', key: 'preco' },
-                    { id: 'f-tamanho', label: 'Tamanho / Medidas (ex: 2,00 x 1,50m)', type: 'text', key: 'tamanho' },
-                    { id: 'f-mat1', label: 'Parte 1 - Material', type: 'text', key: 'mat1' },
-                    { id: 'f-pes1', label: 'Parte 1 - Peso (g)', type: 'number', key: 'pes1' },
-                    { id: 'f-mat2', label: 'Parte 2 - Material', type: 'text', key: 'mat2' },
-                    { id: 'f-pes2', label: 'Parte 2 - Peso (g)', type: 'number', key: 'pes2' },
-                    { id: 'f-mat3', label: 'Parte 3 - Material', type: 'text', key: 'mat3' },
-                    { id: 'f-pes3', label: 'Parte 3 - Peso (g)', type: 'number', key: 'pes3' },
-                    { id: 'f-mat4', label: 'Parte 4 - Material', type: 'text', key: 'mat4' },
-                    { id: 'f-pes4', label: 'Parte 4 - Peso (g)', type: 'number', key: 'pes4' },
-                    { id: 'f-img', label: 'Foto do Produto', type: 'file', key: 'img' },
-                    { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'imgPos' }
-                ]
-            },
-            pedido: {
-                title: 'Pedido',
-                fields: [
-                    { id: 'f-cli', label: 'Nome do Cliente', type: 'text', key: 'cliente' },
-                    { id: 'f-status', label: 'Status', type: 'select', options: ['Pendente', 'Em Produção', 'Entregue'], key: 'status' },
-                    { id: 'f-venderEstoque', label: 'Vender item do estoque?', type: 'checkbox', key: 'venderEstoque' },
-                    { id: 'f-item', label: 'Selecionar Produto', type: 'product_select', key: 'item' },
-                    { id: 'f-qtd', label: 'Quantidade', type: 'number', key: 'qtd' },
-                    { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' },
-                    { id: 'f-img', label: 'Foto de Referência', type: 'file', key: 'img' },
-                    { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'imgPos' }
-                ]
-            },
-            estoque: {
-                title: 'Item de Estoque',
-                fields: [
-                    { id: 'f-item', label: 'Selecionar Produto', type: 'product_select_all', key: 'item' },
-                    { id: 'f-qtd', label: 'Quantidade Pronta Entrega (0 para apagar)', type: 'number', key: 'qtd' },
-                    { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' },
-                    { id: 'f-img', label: 'Foto', type: 'file', key: 'img' },
-                    { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'imgPos' }
-                ]
-            },
-            receita: {
-                title: 'Receita',
-                fields: [
-                    { id: 'f-nome', label: 'Nome da Peça', type: 'text', key: 'nome' },
-                    { id: 'f-fio', label: 'Fio Utilizado', type: 'text', key: 'fio' },
-                    { id: 'f-agulha', label: 'Agulha(s)', type: 'text', key: 'agulha' },
-                    { id: 'f-desc', label: 'Passo a passo / Anotações', type: 'textarea', key: 'desc' },
-                    { id: 'f-img', label: 'Foto da Peça Final', type: 'file', key: 'img' },
-                    { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'imgPos' }
-                ]
-            },
-            financeiro: {
-                title: 'Nova Despesa',
-                fields: [
-                    { id: 'f-cat', label: 'Categoria', type: 'select', options: ['Matéria-prima', 'Embalagens/Aviamentos', 'Ferramentas', 'Frete', 'Outros'], key: 'categoria' },
-                    { id: 'f-desc', label: 'Descrição da Despesa', type: 'text', key: 'desc' },
-                    { id: 'f-valor', label: 'Valor (R$)', type: 'number', key: 'valor' },
-                    { id: 'f-data', label: 'Data', type: 'date', key: 'data' }
-                ]
-            },
-            custo: {
-                title: 'Calculadora de Custos',
-                fields: [
-                    { id: 'c-nome', label: 'Nome da Peça', type: 'text', key: 'nome' },
-                    { id: 'c-precoRolo', label: 'Preço Pago no Rolo (R$)', type: 'number', key: 'precoRolo' },
-                    { id: 'c-pesoRolo', label: 'Peso Total do Rolo (gramas)', type: 'number', key: 'pesoRolo' },
-                    { id: 'c-pesoGasto', label: 'Peso Gasto na Peça (gramas)', type: 'number', key: 'pesoGasto' },
-                    { id: 'c-extras', label: 'Custos Extras (Caixa, Etiqueta) (R$)', type: 'number', key: 'extras' },
-                    { id: 'c-horas', label: 'Tempo de Trabalho (Horas)', type: 'number', key: 'horas' },
-                    { id: 'c-valorHora', label: 'Valor da Hora (R$)', type: 'number', key: 'valorHora' }
-                ]
-            }
+            perfil: { title: 'Editar Perfil', fields: [ { id: 'f-art', label: 'Nome do Artesão', type: 'text', key: 'artisanName' }, { id: 'f-ate', label: 'Nome do Ateliê', type: 'text', key: 'atelierName' }, { id: 'f-img', label: 'Foto de Perfil', type: 'file', key: 'avatar' }, { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'avatarPos' } ] },
+            produto: { title: 'Produto', fields: [ { id: 'f-nome', label: 'Nome da Peça / Produto', type: 'text', key: 'nome' }, { id: 'f-preco', label: 'Preço de Venda (R$)', type: 'number', key: 'preco' }, { id: 'f-tamanho', label: 'Tamanho / Medidas', type: 'text', key: 'tamanho' }, { id: 'f-mat1', label: 'Parte 1 - Material', type: 'text', key: 'mat1' }, { id: 'f-pes1', label: 'Parte 1 - Peso (g)', type: 'number', key: 'pes1' }, { id: 'f-mat2', label: 'Parte 2 - Material', type: 'text', key: 'mat2' }, { id: 'f-pes2', label: 'Parte 2 - Peso (g)', type: 'number', key: 'pes2' }, { id: 'f-mat3', label: 'Parte 3 - Material', type: 'text', key: 'mat3' }, { id: 'f-pes3', label: 'Parte 3 - Peso (g)', type: 'number', key: 'pes3' }, { id: 'f-img', label: 'Foto do Produto', type: 'file', key: 'img' }, { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'imgPos' } ] },
+            pedido: { title: 'Pedido', fields: [ { id: 'f-cli', label: 'Nome do Cliente', type: 'text', key: 'cliente' }, { id: 'f-status', label: 'Status', type: 'select', options: ['Pendente', 'Em Produção', 'Entregue'], key: 'status' }, { id: 'f-venderEstoque', label: 'Vender item do estoque?', type: 'checkbox', key: 'venderEstoque' }, { id: 'f-item', label: 'Selecionar Produto', type: 'product_select', key: 'item' }, { id: 'f-qtd', label: 'Quantidade', type: 'number', key: 'qtd' }, { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' }, { id: 'f-img', label: 'Foto de Referência', type: 'file', key: 'img' }, { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'imgPos' } ] },
+            estoque: { title: 'Item de Estoque', fields: [ { id: 'f-item', label: 'Selecionar Produto', type: 'product_select_all', key: 'item' }, { id: 'f-qtd', label: 'Quantidade (0 para apagar)', type: 'number', key: 'qtd' }, { id: 'f-obs', label: 'Observações', type: 'textarea', key: 'obs' }, { id: 'f-img', label: 'Foto', type: 'file', key: 'img' }, { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'imgPos' } ] },
+            receita: { title: 'Receita', fields: [ { id: 'f-nome', label: 'Nome da Peça', type: 'text', key: 'nome' }, { id: 'f-fio', label: 'Fio Utilizado', type: 'text', key: 'fio' }, { id: 'f-agulha', label: 'Agulha(s)', type: 'text', key: 'agulha' }, { id: 'f-desc', label: 'Passo a passo / Anotações', type: 'textarea', key: 'desc' }, { id: 'f-img', label: 'Foto da Peça Final', type: 'file', key: 'img' }, { id: 'f-imgPos', label: 'Enquadramento da Foto', type: 'imgpos', key: 'imgPos' } ] },
+            financeiro: { title: 'Despesa', fields: [ { id: 'f-cat', label: 'Categoria', type: 'select', options: ['Matéria-prima', 'Embalagens', 'Ferramentas', 'Frete', 'Outros'], key: 'categoria' }, { id: 'f-desc', label: 'Descrição da Despesa', type: 'text', key: 'desc' }, { id: 'f-valor', label: 'Valor (R$)', type: 'number', key: 'valor' }, { id: 'f-data', label: 'Data', type: 'date', key: 'data' } ] },
+            custo: { title: 'Calculadora de Custos', fields: [ { id: 'c-nome', label: 'Nome da Peça', type: 'text', key: 'nome' }, { id: 'c-precoRolo', label: 'Preço no Rolo (R$)', type: 'number', key: 'precoRolo' }, { id: 'c-pesoRolo', label: 'Peso Total Rolo (g)', type: 'number', key: 'pesoRolo' }, { id: 'c-pesoGasto', label: 'Peso Gasto na Peça (g)', type: 'number', key: 'pesoGasto' }, { id: 'c-extras', label: 'Custos Extras (Caixa) (R$)', type: 'number', key: 'extras' }, { id: 'c-horas', label: 'Tempo de Trabalho (h)', type: 'number', key: 'horas' }, { id: 'c-valorHora', label: 'Valor da Hora (R$)', type: 'number', key: 'valorHora' } ] },
+            pasta_insight: { title: 'Pasta de Insights', fields: [ { id: 'f-nome', label: 'Nome da Pasta (ex: Referências de Cores)', type: 'text', key: 'nome' } ] },
+            insight_link: { title: 'Salvar Link', fields: [ { id: 'f-titulo', label: 'Título / Descrição', type: 'text', key: 'titulo' }, { id: 'f-conteudo', label: 'URL / Link (Cole aqui)', type: 'text', key: 'conteudo' } ] },
+            insight_image: { title: 'Salvar Foto/Ideia', fields: [ { id: 'f-titulo', label: 'Título / Descrição', type: 'text', key: 'titulo' }, { id: 'f-img', label: 'Foto (Carregue a imagem)', type: 'file', key: 'conteudo' } ] }
         };
 
-        // --- ATUALIZAR LISTA DE PRODUTOS NO PEDIDO (COM FILTRO DE ESTOQUE) ---
-        function updateProductSelectOptions(selectedVal = '') {
-            const selectEl = document.getElementById('f-item');
-            const checkboxEl = document.getElementById('f-venderEstoque');
-            if (!selectEl) return;
-            
-            const onlyStock = checkboxEl ? checkboxEl.checked : false;
+        // --- SISTEMA DE SELEÇÃO MODERNA (BOTTOM SHEET) ---
+        function openCustomSelect(inputId, type) {
             let availableProducts = state.produtos;
+            const checkboxEl = document.getElementById('f-venderEstoque');
+            const onlyStock = checkboxEl ? checkboxEl.checked : false;
 
-            if (onlyStock) {
-                const stockProductNames = state.estoque
-                    .filter(e => parseFloat(e.qtd || 0) > 0)
-                    .map(e => e.item);
+            if (onlyStock && type === 'product_select') {
+                const stockProductNames = state.estoque.filter(e => parseFloat(e.qtd || 0) > 0).map(e => e.item);
                 availableProducts = state.produtos.filter(p => stockProductNames.includes(p.nome));
             }
 
-            let optionsHtml = '';
+            let html = '';
             if (availableProducts.length === 0) {
-                optionsHtml = `<option value="">${onlyStock ? 'Nenhum produto disponível em estoque' : 'Nenhum produto cadastrado'}</option>`;
+                html = `<p class="text-sm text-stone-400 text-center py-6">Nenhum produto disponível.</p>`;
             } else {
-                optionsHtml = `<option value="">Selecione um produto...</option>` + availableProducts.map(p => `<option value="${p.nome}" ${selectedVal===p.nome?'selected':''}>${p.nome} (R$ ${Number(p.preco||0).toFixed(2)})</option>`).join('');
+                html = availableProducts.map(p => `
+                    <div onclick="selectOption('${inputId}', '${p.nome}', '${p.nome}', ${Number(p.preco||0)})" class="p-4 bg-stone-50 rounded-xl border border-stone-100 active:bg-stone-200 transition-colors cursor-pointer flex justify-between items-center shadow-sm">
+                        <span class="font-bold text-sm text-stone-800">${p.nome}</span>
+                        <span class="text-xs font-semibold text-brand bg-brand-light px-2 py-1 rounded">R$ ${Number(p.preco||0).toFixed(2).replace('.',',')}</span>
+                    </div>
+                `).join('');
             }
-            selectEl.innerHTML = optionsHtml;
+            document.getElementById('custom-select-list').innerHTML = html;
+            document.getElementById('overlay-custom-select').classList.remove('hidden');
         }
 
-        // --- CONTROLE DE MODAIS ---
+        function selectOption(inputId, value, name, price) {
+            document.getElementById(inputId).value = value;
+            const displayEl = document.getElementById(inputId + '-display');
+            displayEl.innerHTML = `<span class="text-stone-900 font-bold">${name} <span class="font-normal text-stone-500 text-xs ml-1">(R$ ${price.toFixed(2).replace('.',',')})</span></span><i data-lucide="chevron-down" class="w-4 h-4 text-stone-400"></i>`;
+            lucide.createIcons();
+            closeCustomSelect();
+        }
+        function closeCustomSelect() { document.getElementById('overlay-custom-select').classList.add('hidden'); }
+
+        // --- CONTROLE DE MODAIS (FORMULÁRIOS) ---
         function openForm(type, id = null) {
             closeAllModals();
-
             state.formState = { type, editingId: id, tempImage: null, tempImgPos: 'center' };
             const def = formDefinitions[type];
-            document.getElementById('form-title').innerText = id ? 'Editar ' + def.title : (type==='perfil' ? def.title : 'Novo(a) ' + def.title);
+            document.getElementById('form-title').innerText = id ? 'Editar ' + def.title : (['perfil'].includes(type) ? def.title : 'Novo(a) ' + def.title);
 
             let item = {};
             if (type === 'perfil') item = state.config;
+            else if (['insight_link', 'insight_image'].includes(type)) {
+                const folder = state.insights.find(f => f.id === state.currentInsightFolderId);
+                item = (folder?.items || []).find(i => i.id === id);
+            }
+            else if (type === 'pasta_insight') item = state.insights.find(i => i.id === id);
             else if (id) {
                 const arr = type === 'financeiro' ? state.financeiro : (type === 'produto' ? state.produtos : (type === 'estoque' ? state.estoque : state[type + 's']));
                 item = arr.find(i => i.id === id);
             }
 
-            if (item && item.imgPos) {
-                state.formState.tempImgPos = item.imgPos;
-            }
+            if (item && item.imgPos) state.formState.tempImgPos = item.imgPos;
 
             if (type === 'produto' && item && item.partes) {
-                item.mat1 = item.partes[0]?.material || '';
-                item.pes1 = item.partes[0]?.peso || '';
-                item.mat2 = item.partes[1]?.material || '';
-                item.pes2 = item.partes[1]?.peso || '';
-                item.mat3 = item.partes[2]?.material || '';
-                item.pes3 = item.partes[2]?.peso || '';
-                item.mat4 = item.partes[3]?.material || '';
-                item.pes4 = item.partes[3]?.peso || '';
+                item.mat1 = item.partes[0]?.material || ''; item.pes1 = item.partes[0]?.peso || '';
+                item.mat2 = item.partes[1]?.material || ''; item.pes2 = item.partes[1]?.peso || '';
+                item.mat3 = item.partes[2]?.material || ''; item.pes3 = item.partes[2]?.peso || '';
+                item.mat4 = item.partes[3]?.material || ''; item.pes4 = item.partes[3]?.peso || '';
             }
 
             let html = '';
@@ -659,7 +647,6 @@
                 if (f.key === 'qtd' && !val && (type === 'pedido' || type === 'estoque')) val = 1;
 
                 if (f.type === 'imgpos') {
-                    // Renderiza seletor de enquadramento se houver imagem ou sempre integrado
                     let currentPos = val || state.formState.tempImgPos || 'center';
                     html += `
                         <div id="imgpos-container" class="mb-4 ${!state.formState.tempImage && !item?.img ? 'hidden' : ''}">
@@ -678,14 +665,18 @@
                 html += `<div class="mb-4"><label class="block text-xs font-bold text-stone-500 mb-1">${f.label}</label>`;
 
                 if (f.type === 'textarea') {
-                    html += `<textarea id="${f.id}" rows="4" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">${val}</textarea>`;
+                    html += `<textarea id="${f.id}" rows="4" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm shadow-inner">${val}</textarea>`;
                 } else if (f.type === 'select') {
-                    html += `<select id="${f.id}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">${f.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>`;
-                } else if (f.type === 'product_select') {
-                    html += `<select id="${f.id}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm"><option value="">Carregando...</option></select>`;
-                } else if (f.type === 'product_select_all') {
-                    let optionsHtml = state.produtos.length === 0 ? '<option value="">Nenhum produto cadastrado</option>' : '<option value="">Selecione um produto...</option>' + state.produtos.map(p => `<option value="${p.nome}" ${val===p.nome?'selected':''}>${p.nome}</option>`).join('');
-                    html += `<select id="${f.id}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">${optionsHtml}</select>`;
+                    html += `<select id="${f.id}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm shadow-inner">${f.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>`;
+                } else if (f.type === 'product_select' || f.type === 'product_select_all') {
+                    let displayVal = val ? `<span class="text-stone-900 font-bold">${val}</span>` : '<span class="text-stone-400">Selecione um produto...</span>';
+                    html += `
+                    <div class="relative cursor-pointer" onclick="openCustomSelect('${f.id}', '${f.type}')">
+                        <input type="hidden" id="${f.id}" value="${val}">
+                        <div id="${f.id}-display" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none flex justify-between items-center text-sm shadow-inner">
+                            ${displayVal} <i data-lucide="chevron-down" class="w-4 h-4 text-stone-400"></i>
+                        </div>
+                    </div>`;
                 } else if (f.type === 'checkbox') {
                     html += `<input type="checkbox" id="${f.id}" ${val ? 'checked' : ''} class="w-5 h-5 accent-brand rounded border-stone-300">`;
                 } else if (f.type === 'file') {
@@ -696,7 +687,7 @@
                         </div>`;
                     if (val) state.formState.tempImage = val;
                 } else {
-                    html += `<input type="${f.type}" id="${f.id}" value="${val}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm">`;
+                    html += `<input type="${f.type}" id="${f.id}" value="${val}" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 outline-none focus:border-brand text-sm shadow-inner">`;
                 }
                 html += `</div>`;
             });
@@ -704,12 +695,14 @@
             document.getElementById('form-body').innerHTML = html;
             document.getElementById('btn-delete').classList.toggle('hidden', !id);
 
+            // Listener para limpar produto quando mudar checkbox do estoque
             if (type === 'pedido') {
-                updateProductSelectOptions(item ? item.item : '');
                 const cb = document.getElementById('f-venderEstoque');
                 if (cb) {
                     cb.addEventListener('change', () => {
-                        updateProductSelectOptions();
+                        document.getElementById('f-item').value = '';
+                        document.getElementById('f-item-display').innerHTML = `<span class="text-stone-400">Selecione um produto...</span><i data-lucide="chevron-down" class="w-4 h-4 text-stone-400"></i>`;
+                        lucide.createIcons();
                     });
                 }
             }
@@ -724,19 +717,14 @@
                 b.className = "imgpos-btn py-2 text-xs font-semibold rounded-lg text-stone-600 hover:bg-stone-200";
             });
             btnEl.className = "imgpos-btn py-2 text-xs font-semibold rounded-lg bg-brand text-white";
-
-            // Atualiza preview se houver
             const previews = document.querySelectorAll('img[id$="-preview"]');
             previews.forEach(img => {
                 img.className = `w-16 h-16 rounded-lg object-cover ${getPosClass(pos)} border border-stone-200 shadow-sm`;
             });
         }
+        function closeFormModal() { document.getElementById('overlay-form').classList.add('hidden'); }
 
-        function closeFormModal() {
-            document.getElementById('overlay-form').classList.add('hidden');
-        }
-
-        // --- COMPRESSÃO AUTOMÁTICA DE IMAGEM ---
+        // COMPRESSÃO AUTOMÁTICA DE IMAGEM
         function handleImageUpload(event, previewId) {
             const file = event.target.files[0];
             if (file) {
@@ -745,28 +733,12 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600;
-                        const MAX_HEIGHT = 600;
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > height) {
-                            if (width > MAX_WIDTH) {
-                                height *= MAX_WIDTH / width;
-                                width = MAX_WIDTH;
-                            }
-                        } else {
-                            if (height > MAX_HEIGHT) {
-                                width *= MAX_HEIGHT / height;
-                                height = MAX_HEIGHT;
-                            }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-
+                        const MAX_WIDTH = 600; const MAX_HEIGHT = 600;
+                        let width = img.width; let height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
                         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
                         const previewEl = document.getElementById(previewId);
@@ -775,7 +747,6 @@
                         previewEl.classList.remove('hidden');
                         state.formState.tempImage = compressedDataUrl;
 
-                        // Exibe o seletor de enquadramento se estiver oculto
                         const imgPosContainer = document.getElementById('imgpos-container');
                         if (imgPosContainer) imgPosContainer.classList.remove('hidden');
                     };
@@ -785,167 +756,56 @@
             }
         }
 
-        // --- CONTROLE DE VISUALIZAÇÃO DE RECEITAS ---
+        // --- CONTROLE DOS VISUALIZADORES DE DETALHES ---
         function openRecipeDetail(id) {
-            closeAllModals();
-            state.currentRecipeViewId = id;
-            const r = state.receitas.find(item => item.id === id);
-            if (!r) return;
-
-            const imgPosClass = getPosClass(r.imgPos);
-            let html = `
-                ${r.img ? `<img src="${r.img}" class="w-full h-48 rounded-2xl object-cover ${imgPosClass} border border-stone-200 shadow-sm">` : ''}
-                <div>
-                    <h2 class="text-xl font-bold text-stone-900 mb-2">${r.nome}</h2>
-                    <div class="flex gap-2 text-xs text-stone-600 mb-4">
-                        <span class="bg-stone-100 px-3 py-1.5 rounded-xl">Fio: <b>${r.fio}</b></span>
-                        <span class="bg-stone-100 px-3 py-1.5 rounded-xl">Agulha: <b>${r.agulha}</b></span>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Passo a passo / Anotações</h4>
-                    <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${r.desc || 'Nenhum passo a passo cadastrado.'}</div>
-                </div>
-            `;
-            document.getElementById('recipe-detail-body').innerHTML = html;
+            closeAllModals(); state.currentRecipeViewId = id; const r = state.receitas.find(item => item.id === id); if (!r) return;
+            document.getElementById('recipe-detail-body').innerHTML = `
+                ${r.img ? `<img src="${r.img}" class="w-full h-48 rounded-2xl object-cover ${getPosClass(r.imgPos)} border border-stone-200 shadow-sm">` : ''}
+                <div><h2 class="text-xl font-bold text-stone-900 mb-2">${r.nome}</h2><div class="flex gap-2 text-xs text-stone-600 mb-4"><span class="bg-stone-100 px-3 py-1.5 rounded-xl">Fio: <b>${r.fio}</b></span><span class="bg-stone-100 px-3 py-1.5 rounded-xl">Agulha: <b>${r.agulha}</b></span></div></div>
+                <div><h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Passo a passo</h4><div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${r.desc || 'Nenhum passo a passo cadastrado.'}</div></div>`;
             document.getElementById('overlay-recipe').classList.remove('hidden');
         }
         function closeRecipeModal() { document.getElementById('overlay-recipe').classList.add('hidden'); }
         function editRecipeFromDetail() { closeRecipeModal(); openForm('receita', state.currentRecipeViewId); }
-        function deleteRecipeFromDetail() {
-            showCustomConfirm('Tem certeza que deseja excluir esta receita?', () => {
-                state.receitas = state.receitas.filter(i => i.id !== state.currentRecipeViewId);
-                saveState();
-                closeRecipeModal();
-                render();
-            });
-        }
+        function deleteRecipeFromDetail() { showCustomConfirm('Excluir esta receita?', () => { state.receitas = state.receitas.filter(i => i.id !== state.currentRecipeViewId); saveState(); closeRecipeModal(); render(); }); }
 
-        // --- CONTROLE DE VISUALIZAÇÃO DE PEDIDOS ---
         function openOrderDetail(id) {
-            closeAllModals();
-            state.currentOrderId = id;
-            const p = state.pedidos.find(item => item.id === id);
-            if (!p) return;
-
-            let statusBg = 'bg-stone-100 text-stone-600';
-            if (p.status === 'Pendente') statusBg = 'bg-red-100 text-red-600';
-            else if (p.status === 'Em Produção') statusBg = 'bg-amber-100 text-amber-700';
-            else if (p.status === 'Entregue') statusBg = 'bg-green-100 text-green-600';
-
-            const imgPosClass = getPosClass(p.imgPos);
-            let html = `
-                ${p.img ? `<img src="${p.img}" class="w-full h-48 rounded-2xl object-cover ${imgPosClass} border border-stone-200 shadow-sm">` : ''}
-                <div>
-                    <h2 class="text-xl font-bold text-stone-900 mb-1">${p.item}</h2>
-                    <p class="text-sm text-stone-600 mb-1">Cliente: <b>${p.cliente}</b></p>
-                    <p class="text-sm text-stone-600 mb-3">Quantidade: <b>${p.qtd || 1}</b></p>
-                    <div class="flex gap-2 items-center mb-4">
-                        <span class="text-xs font-bold px-3 py-1 rounded-full ${statusBg}">${p.status}</span>
-                        <span class="text-base font-heading font-bold text-brand">R$ ${Number(p.valor||0).toFixed(2).replace('.',',')}</span>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Observações</h4>
-                    <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${p.obs || 'Nenhuma observação cadastrada.'}</div>
-                </div>
-            `;
-            document.getElementById('order-detail-body').innerHTML = html;
+            closeAllModals(); state.currentOrderId = id; const p = state.pedidos.find(item => item.id === id); if (!p) return;
+            let statusBg = 'bg-stone-100 text-stone-600'; if (p.status === 'Pendente') statusBg = 'bg-red-100 text-red-600'; else if (p.status === 'Em Produção') statusBg = 'bg-amber-100 text-amber-700'; else if (p.status === 'Entregue') statusBg = 'bg-green-100 text-green-600';
+            document.getElementById('order-detail-body').innerHTML = `
+                ${p.img ? `<img src="${p.img}" class="w-full h-48 rounded-2xl object-cover ${getPosClass(p.imgPos)} border border-stone-200 shadow-sm">` : ''}
+                <div><h2 class="text-xl font-bold text-stone-900 mb-1">${p.item}</h2><p class="text-sm text-stone-600 mb-1">Cliente: <b>${p.cliente}</b></p><p class="text-sm text-stone-600 mb-3">Qtd: <b>${p.qtd || 1}</b></p><div class="flex gap-2 items-center mb-4"><span class="text-xs font-bold px-3 py-1 rounded-full ${statusBg}">${p.status}</span><span class="text-base font-heading font-bold text-brand">R$ ${Number(p.valor||0).toFixed(2).replace('.',',')}</span></div></div>
+                <div><h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Observações</h4><div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${p.obs || 'Nenhuma observação.'}</div></div>`;
             document.getElementById('overlay-order').classList.remove('hidden');
         }
         function closeOrderModal() { document.getElementById('overlay-order').classList.add('hidden'); }
         function editOrderFromDetail() { closeOrderModal(); openForm('pedido', state.currentOrderId); }
-        function deleteOrderFromDetail() {
-            showCustomConfirm('Tem certeza que deseja excluir este pedido?', () => {
-                state.pedidos = state.pedidos.filter(i => i.id !== state.currentOrderId);
-                saveState();
-                closeOrderModal();
-                render();
-            });
-        }
+        function deleteOrderFromDetail() { showCustomConfirm('Excluir este pedido?', () => { state.pedidos = state.pedidos.filter(i => i.id !== state.currentOrderId); saveState(); closeOrderModal(); render(); }); }
 
-        // --- CONTROLE DE VISUALIZAÇÃO DE ESTOQUE ---
         function openStockDetail(id) {
-            closeAllModals();
-            state.currentStockId = id;
-            const e = state.estoque.find(item => item.id === id);
-            if (!e) return;
-
-            const imgPosClass = getPosClass(e.imgPos);
-            let html = `
-                ${e.img ? `<img src="${e.img}" class="w-full h-48 rounded-2xl object-cover ${imgPosClass} border border-stone-200 shadow-sm">` : ''}
-                <div>
-                    <h2 class="text-xl font-bold text-stone-900 mb-1">${e.item}</h2>
-                    <p class="text-sm text-stone-600 mb-4">Pronta Entrega: <b>${e.qtd}</b></p>
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Observações</h4>
-                    <div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${e.obs || 'Nenhuma observação cadastrada.'}</div>
-                </div>
-            `;
-            document.getElementById('stock-detail-body').innerHTML = html;
+            closeAllModals(); state.currentStockId = id; const e = state.estoque.find(item => item.id === id); if (!e) return;
+            document.getElementById('stock-detail-body').innerHTML = `
+                ${e.img ? `<img src="${e.img}" class="w-full h-48 rounded-2xl object-cover ${getPosClass(e.imgPos)} border border-stone-200 shadow-sm">` : ''}
+                <div><h2 class="text-xl font-bold text-stone-900 mb-1">${e.item}</h2><p class="text-sm text-stone-600 mb-4">Pronta Entrega: <b>${e.qtd}</b></p></div>
+                <div><h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Observações</h4><div class="bg-stone-50 p-4 rounded-2xl border border-stone-100 text-stone-800 text-sm whitespace-pre-wrap leading-relaxed">${e.obs || 'Nenhuma observação.'}</div></div>`;
             document.getElementById('overlay-stock').classList.remove('hidden');
         }
         function closeStockModal() { document.getElementById('overlay-stock').classList.add('hidden'); }
         function editStockFromDetail() { closeStockModal(); openForm('estoque', state.currentStockId); }
-        function deleteStockFromDetail() {
-            showCustomConfirm('Tem certeza que deseja excluir este item do estoque?', () => {
-                state.estoque = state.estoque.filter(i => i.id !== state.currentStockId);
-                saveState();
-                closeStockModal();
-                render();
-            });
-        }
+        function deleteStockFromDetail() { showCustomConfirm('Excluir item do estoque?', () => { state.estoque = state.estoque.filter(i => i.id !== state.currentStockId); saveState(); closeStockModal(); render(); }); }
 
-        // --- CONTROLE DE VISUALIZAÇÃO DE PRODUTO ---
         function openProductDetail(id) {
-            closeAllModals();
-            state.currentProductViewId = id;
-            const pr = state.produtos.find(item => item.id === id);
-            if (!pr) return;
-
-            let partesHtml = '';
-            if (pr.partes && pr.partes.length > 0) {
-                partesHtml = pr.partes.map((pt, idx) => pt.material ? `
-                    <div class="flex justify-between items-center text-xs bg-stone-50 p-2.5 rounded-xl border border-stone-100 mb-2">
-                        <span class="font-medium text-stone-700">Parte ${idx + 1}: ${pt.material}</span>
-                        <span class="font-bold text-brand">${pt.peso}g</span>
-                    </div>
-                ` : '').join('');
-            }
-
-            const imgPosClass = getPosClass(pr.imgPos);
-            let html = `
-                ${pr.img ? `<img src="${pr.img}" class="w-full h-48 rounded-2xl object-cover ${imgPosClass} border border-stone-200 shadow-sm">` : ''}
-                <div>
-                    <h2 class="text-xl font-bold text-stone-900 mb-1">${pr.nome}</h2>
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="text-base font-heading font-bold text-brand">R$ ${Number(pr.preco||0).toFixed(2).replace('.',',')}</span>
-                        ${pr.tamanho ? `<span class="text-xs bg-stone-100 text-stone-700 px-2.5 py-1 rounded-lg font-semibold">Tamanho: ${pr.tamanho}</span>` : ''}
-                    </div>
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Partes e Materiais</h4>
-                    <div>${partesHtml || '<p class="text-xs text-stone-400">Nenhuma parte cadastrada.</p>'}</div>
-                </div>
-            `;
-            document.getElementById('product-detail-body').innerHTML = html;
+            closeAllModals(); state.currentProductViewId = id; const pr = state.produtos.find(item => item.id === id); if (!pr) return;
+            let partesHtml = ''; if (pr.partes && pr.partes.length > 0) { partesHtml = pr.partes.map((pt, idx) => pt.material ? `<div class="flex justify-between items-center text-xs bg-stone-50 p-2.5 rounded-xl border border-stone-100 mb-2"><span class="font-medium text-stone-700">Parte ${idx + 1}: ${pt.material}</span><span class="font-bold text-brand">${pt.peso}g</span></div>` : '').join(''); }
+            document.getElementById('product-detail-body').innerHTML = `
+                ${pr.img ? `<img src="${pr.img}" class="w-full h-48 rounded-2xl object-cover ${getPosClass(pr.imgPos)} border border-stone-200 shadow-sm">` : ''}
+                <div><h2 class="text-xl font-bold text-stone-900 mb-1">${pr.nome}</h2><div class="flex items-center gap-3 mb-4"><span class="text-base font-heading font-bold text-brand">R$ ${Number(pr.preco||0).toFixed(2).replace('.',',')}</span>${pr.tamanho ? `<span class="text-xs bg-stone-100 text-stone-700 px-2.5 py-1 rounded-lg font-semibold">Tamanho: ${pr.tamanho}</span>` : ''}</div></div>
+                <div><h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Partes e Materiais</h4><div>${partesHtml || '<p class="text-xs text-stone-400">Nenhuma parte cadastrada.</p>'}</div></div>`;
             document.getElementById('overlay-product').classList.remove('hidden');
         }
         function closeProductModal() { document.getElementById('overlay-product').classList.add('hidden'); }
         function editProductFromDetail() { closeProductModal(); openForm('produto', state.currentProductViewId); }
-        function deleteProductFromDetail() {
-            showCustomConfirm('Tem certeza que deseja excluir este produto? (Isso também o removerá do estoque)', () => {
-                const pr = state.produtos.find(i => i.id === state.currentProductViewId);
-                if (pr) {
-                    state.estoque = state.estoque.filter(e => e.item !== pr.nome);
-                }
-                state.produtos = state.produtos.filter(i => i.id !== state.currentProductViewId);
-                saveState();
-                closeProductModal();
-                render();
-            });
-        }
+        function deleteProductFromDetail() { showCustomConfirm('Excluir produto (Isso também o removerá do estoque)?', () => { const pr = state.produtos.find(i => i.id === state.currentProductViewId); if (pr) { state.estoque = state.estoque.filter(e => e.item !== pr.nome); } state.produtos = state.produtos.filter(i => i.id !== state.currentProductViewId); saveState(); closeProductModal(); render(); }); }
 
         function closeAllModals() {
             document.getElementById('overlay-form').classList.add('hidden');
@@ -954,138 +814,87 @@
             document.getElementById('overlay-stock').classList.add('hidden');
             document.getElementById('overlay-product').classList.add('hidden');
             document.getElementById('overlay-confirm').classList.add('hidden');
+            document.getElementById('overlay-custom-select').classList.add('hidden');
         }
 
+        // --- SUBMIT E DELETE CENTRALIZADO ---
         function submitForm() {
             const { type, editingId, tempImage, tempImgPos } = state.formState;
             const def = formDefinitions[type];
             let newData = { id: editingId || Date.now(), imgPos: tempImgPos };
 
             def.fields.forEach(f => {
-                if (f.type === 'file') {
-                    newData[f.key] = tempImage;
-                } else if (f.type === 'imgpos') {
-                    newData[f.key] = tempImgPos;
-                } else if (f.type === 'checkbox') {
-                    newData[f.key] = document.getElementById(f.id).checked;
-                } else {
-                    let val = document.getElementById(f.id).value;
-                    if (f.type === 'number') val = parseFloat(val) || 0;
-                    newData[f.key] = val;
-                }
+                if (f.type === 'file') newData[f.key] = tempImage;
+                else if (f.type === 'imgpos') newData[f.key] = tempImgPos;
+                else if (f.type === 'checkbox') newData[f.key] = document.getElementById(f.id).checked;
+                else { let val = document.getElementById(f.id).value; if (f.type === 'number') val = parseFloat(val) || 0; newData[f.key] = val; }
             });
 
-            if (type === 'perfil') {
-                state.config = { ...state.config, ...newData };
-            } else if (type === 'produto') {
-                newData.partes = [
-                    { material: newData.mat1 || '', peso: newData.pes1 || 0 },
-                    { material: newData.mat2 || '', peso: newData.pes2 || 0 },
-                    { material: newData.mat3 || '', peso: newData.pes3 || 0 },
-                    { material: newData.mat4 || '', peso: newData.pes4 || 0 }
-                ];
-                delete newData.mat1; delete newData.pes1;
-                delete newData.mat2; delete newData.pes2;
-                delete newData.mat3; delete newData.pes3;
-                delete newData.mat4; delete newData.pes4;
-
-                if (editingId) state.produtos[state.produtos.findIndex(i => i.id === editingId)] = newData;
-                else state.produtos.push(newData);
+            if (type === 'perfil') state.config = { ...state.config, ...newData };
+            else if (type === 'pasta_insight') {
+                if (editingId) state.insights[state.insights.findIndex(i => i.id === editingId)].nome = newData.nome;
+                else state.insights.push({ id: newData.id, nome: newData.nome, items: [] });
+                navigate('insights');
+            }
+            else if (['insight_link', 'insight_image'].includes(type)) {
+                newData.tipo = type === 'insight_link' ? 'link' : 'image';
+                const folder = state.insights.find(f => f.id === state.currentInsightFolderId);
+                if (editingId) folder.items[folder.items.findIndex(i => i.id === editingId)] = newData;
+                else folder.items.push(newData);
+                navigate('insight_folder');
+            }
+            else if (type === 'produto') {
+                newData.partes = [{ material: newData.mat1 || '', peso: newData.pes1 || 0 }, { material: newData.mat2 || '', peso: newData.pes2 || 0 }, { material: newData.mat3 || '', peso: newData.pes3 || 0 }, { material: newData.mat4 || '', peso: newData.pes4 || 0 }];
+                delete newData.mat1; delete newData.pes1; delete newData.mat2; delete newData.pes2; delete newData.mat3; delete newData.pes3; delete newData.mat4; delete newData.pes4;
+                if (editingId) state.produtos[state.produtos.findIndex(i => i.id === editingId)] = newData; else state.produtos.push(newData);
                 navigate('produtos');
             } else if (type === 'estoque') {
-                if (!newData.qtd || newData.qtd <= 0) {
-                    if (editingId) {
-                        state.estoque = state.estoque.filter(i => i.id !== editingId);
-                    }
-                } else {
-                    if (editingId) {
-                        state.estoque[state.estoque.findIndex(i => i.id === editingId)] = newData;
-                    } else {
+                if (!newData.qtd || newData.qtd <= 0) { if (editingId) state.estoque = state.estoque.filter(i => i.id !== editingId); } 
+                else {
+                    if (editingId) state.estoque[state.estoque.findIndex(i => i.id === editingId)] = newData;
+                    else {
                         const existingIndex = state.estoque.findIndex(e => e.item === newData.item);
-                        if (existingIndex !== -1) {
-                            let currentQtd = parseFloat(state.estoque[existingIndex].qtd) || 0;
-                            let addedQtd = parseFloat(newData.qtd) || 0;
-                            state.estoque[existingIndex].qtd = currentQtd + addedQtd;
-                            if (newData.obs) state.estoque[existingIndex].obs = newData.obs;
-                            if (newData.img) state.estoque[existingIndex].img = newData.img;
-                            if (newData.imgPos) state.estoque[existingIndex].imgPos = newData.imgPos;
-                        } else {
-                            state.estoque.push(newData);
-                        }
+                        if (existingIndex !== -1) { state.estoque[existingIndex].qtd = (parseFloat(state.estoque[existingIndex].qtd) || 0) + (parseFloat(newData.qtd) || 0); if (newData.obs) state.estoque[existingIndex].obs = newData.obs; if (newData.img) state.estoque[existingIndex].img = newData.img; if (newData.imgPos) state.estoque[existingIndex].imgPos = newData.imgPos; } 
+                        else state.estoque.push(newData);
                     }
                 }
                 navigate('estoque');
             } else if (type === 'pedido') {
                 if (!newData.qtd || newData.qtd < 1) newData.qtd = 1;
-                const prod = state.produtos.find(p => p.nome === newData.item);
-                const unitPrice = prod ? Number(prod.preco || 0) : 0;
-                newData.valor = unitPrice * newData.qtd;
-
+                const prod = state.produtos.find(p => p.nome === newData.item); newData.valor = (prod ? Number(prod.preco || 0) : 0) * newData.qtd;
                 if (newData.venderEstoque && newData.qtd > 0) {
                     const stockItem = state.estoque.find(e => e.item === newData.item);
-                    if (stockItem) {
-                        let atual = parseFloat(stockItem.qtd) || 0;
-                        stockItem.qtd = Math.max(0, atual - parseFloat(newData.qtd));
-                        if (stockItem.qtd <= 0) {
-                            state.estoque = state.estoque.filter(e => e.id !== stockItem.id);
-                        }
-                    }
+                    if (stockItem) { stockItem.qtd = Math.max(0, (parseFloat(stockItem.qtd) || 0) - parseFloat(newData.qtd)); if (stockItem.qtd <= 0) state.estoque = state.estoque.filter(e => e.id !== stockItem.id); }
                 }
-
-                if (editingId) state.pedidos[state.pedidos.findIndex(i => i.id === editingId)] = newData;
-                else state.pedidos.push(newData);
+                if (editingId) state.pedidos[state.pedidos.findIndex(i => i.id === editingId)] = newData; else state.pedidos.push(newData);
                 navigate('pedidos');
             } else if (type === 'custo') {
-                const custoGrama = newData.precoRolo / newData.pesoRolo;
-                newData.custoFio = custoGrama * newData.pesoGasto;
-                newData.custoTotal = newData.custoFio + newData.extras + (newData.horas * newData.valorHora);
-
-                if (editingId) state.custos[state.custos.findIndex(i => i.id === editingId)] = newData;
-                else state.custos.push(newData);
+                newData.custoFio = (newData.precoRolo / newData.pesoRolo) * newData.pesoGasto; newData.custoTotal = newData.custoFio + newData.extras + (newData.horas * newData.valorHora);
+                if (editingId) state.custos[state.custos.findIndex(i => i.id === editingId)] = newData; else state.custos.push(newData);
                 navigate('custos');
             } else {
                 const targetArray = type === 'financeiro' ? 'financeiro' : type + 's';
-                if (editingId) state[targetArray][state[targetArray].findIndex(i => i.id === editingId)] = newData;
-                else state[targetArray].push(newData);
-
-                if (!editingId && ['pedido', 'estoque', 'receita', 'financeiro'].includes(type)) {
-                    navigate(type === 'estoque' ? 'estoque' : (type === 'financeiro' ? 'financeiro' : type + 's'));
-                }
+                if (editingId) state[targetArray][state[targetArray].findIndex(i => i.id === editingId)] = newData; else state[targetArray].push(newData);
+                if (!editingId && ['pedido', 'estoque', 'receita', 'financeiro'].includes(type)) navigate(type === 'estoque' ? 'estoque' : (type === 'financeiro' ? 'financeiro' : type + 's'));
             }
 
-            saveState();
-            closeAllModals();
-            render();
+            saveState(); closeAllModals(); render();
         }
 
         function deleteCurrentItem() {
             showCustomConfirm('Tem certeza que deseja excluir este item?', () => {
                 const { type, editingId } = state.formState;
-                if (type === 'produto') {
-                    const pr = state.produtos.find(i => i.id === editingId);
-                    if (pr) {
-                        state.estoque = state.estoque.filter(e => e.item !== pr.nome);
-                    }
-                    state.produtos = state.produtos.filter(i => i.id !== editingId);
-                } else {
-                    const targetArray = type === 'pedido' ? 'pedidos' : (type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'custo' ? 'custos' : (type === 'receita' ? 'receitas' : type + 's'))));
-                    state[targetArray] = state[targetArray].filter(i => i.id !== editingId);
-                }
-                saveState();
-                closeAllModals();
-                render();
+                if (type === 'pasta_insight') { state.insights = state.insights.filter(i => i.id !== editingId); navigate('insights'); }
+                else if (['insight_link', 'insight_image'].includes(type)) { const folder = state.insights.find(f => f.id === state.currentInsightFolderId); folder.items = folder.items.filter(i => i.id !== editingId); navigate('insight_folder'); }
+                else if (type === 'produto') { const pr = state.produtos.find(i => i.id === editingId); if (pr) { state.estoque = state.estoque.filter(e => e.item !== pr.nome); } state.produtos = state.produtos.filter(i => i.id !== editingId); } 
+                else { const targetArray = type === 'pedido' ? 'pedidos' : (type === 'financeiro' ? 'financeiro' : (type === 'estoque' ? 'estoque' : (type === 'custo' ? 'custos' : (type === 'receita' ? 'receitas' : type + 's')))); state[targetArray] = state[targetArray].filter(i => i.id !== editingId); }
+                saveState(); closeAllModals(); render();
             });
         }
 
         render();
-        document.addEventListener('DOMContentLoaded', () => {
-            render();
-        });
+        document.addEventListener('DOMContentLoaded', () => { render(); });
     </script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js');
-      }
-    </script>
+    <script> if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); } </script>
 </body>
 </html>
