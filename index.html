@@ -189,7 +189,7 @@
 
     <script>
         // --- ESTADO GLOBAL & LOCAL STORAGE ---
-        const STORAGE_KEY = 'soul_atelier_data_v12';
+        const STORAGE_KEY = 'soul_atelier_data_v13';
 
         const state = {
             currentView: 'home',
@@ -201,7 +201,7 @@
             financeiro: [],
             produtos: [],
             insights: [],
-            formState: { type: null, editingId: null, tempImage: null, tempImgPosX: 50, tempImgPosY: 50, tempPartes: [] },
+            formState: { type: null, editingId: null, tempImage: null, tempImagesMultiple: [], tempImgPosX: 50, tempImgPosY: 50, tempPartes: [] },
             currentRecipeViewId: null,
             currentOrderId: null,
             currentStockId: null,
@@ -211,11 +211,11 @@
 
         function saveState() {
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } 
-            catch (e) { alert("Atenção: O armazenamento ficou cheio devido ao tamanho das fotos."); }
+            catch (e) { alert("Atenção: O armazenamento ficou cheio devido ao tamanho das fotos em alta resolução."); }
         }
 
         function loadState() {
-            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
+            const keysToTry = [STORAGE_KEY, 'soul_atelier_data_v12', 'soul_atelier_data_v11', 'soul_atelier_data_v10', 'soul_atelier_data_v9', 'soul_atelier_data_v8', 'soul_atelier_data_v7', 'soul_atelier_data_v6', 'soul_atelier_data_v5', 'soul_atelier_data_v4', 'soul_atelier_data_v3'];
             for (const k of keysToTry) {
                 const saved = localStorage.getItem(k);
                 if (saved) {
@@ -813,7 +813,7 @@
             custo: { title: 'Calculadora de Custos', fields: [ { id: 'c-nome', label: 'Nome da Peça', type: 'text', key: 'nome' }, { id: 'c-precoRolo', label: 'Preço no Rolo (R$)', type: 'number', key: 'precoRolo' }, { id: 'c-pesoRolo', label: 'Peso Total Rolo (g)', type: 'number', key: 'pesoRolo' }, { id: 'c-pesoGasto', label: 'Peso Gasto na Peça (g)', type: 'number', key: 'pesoGasto' }, { id: 'c-extras', label: 'Custos Extras (Caixa) (R$)', type: 'number', key: 'extras' }, { id: 'c-horas', label: 'Tempo de Trabalho (h)', type: 'number', key: 'horas' }, { id: 'c-valorHora', label: 'Valor da Hora (R$)', type: 'number', key: 'valorHora' } ] },
             pasta_insight: { title: 'Pasta de Ideias', fields: [ { id: 'f-nome', label: 'Nome da Pasta', type: 'text', key: 'nome' } ] },
             insight_link: { title: 'Salvar Link', fields: [ { id: 'f-titulo', label: 'Título / Descrição', type: 'text', key: 'titulo' }, { id: 'f-conteudo', label: 'URL / Link', type: 'text', key: 'conteudo' } ] },
-            insight_image: { title: 'Salvar Fotos', fields: [ { id: 'f-img', label: 'Selecionar Fotos (Permite várias)', type: 'multiple_files', key: 'conteudo' } ] }
+            insight_image: { title: 'Salvar Fotos', fields: [ { id: 'f-img', label: 'Selecionar Fotos (Permite várias em alta qualidade)', type: 'multiple_files', key: 'conteudo' } ] }
         };
 
         // --- SELETOR CUSTOMIZADO ---
@@ -905,7 +905,7 @@
                         <div class="flex flex-col gap-2">
                             <div id="multiple-preview-container" class="grid grid-cols-3 gap-2 ${val ? '' : 'hidden'}"></div>
                             <label class="bg-stone-50 border border-stone-200 text-stone-600 font-bold text-xs py-4 rounded-xl flex justify-center items-center gap-2 cursor-pointer active:scale-95 transition-transform hover:bg-stone-100">
-                                <i data-lucide="upload" class="w-4 h-4"></i> Selecionar Fotos (várias)
+                                <i data-lucide="upload" class="w-4 h-4"></i> Selecionar Fotos (Qualidade Original)
                                 <input type="file" accept="image/*" multiple onchange="handleMultipleImagesUpload(event)" class="hidden">
                             </label>
                         </div>
@@ -925,7 +925,7 @@
                                 </div>
                             </div>
                             <label class="bg-stone-50 border border-stone-200 text-stone-600 font-bold text-xs py-3 rounded-xl flex justify-center items-center gap-2 cursor-pointer active:scale-95 transition-transform hover:bg-stone-100">
-                                <i data-lucide="upload" class="w-4 h-4"></i> ${val ? 'Trocar Foto' : 'Anexar Foto'}
+                                <i data-lucide="upload" class="w-4 h-4"></i> ${val ? 'Trocar Foto' : 'Anexar Foto (Qualidade Original)'}
                                 <input type="file" accept="image/*" onchange="handleImageUpload(event, '${f.id}-preview', '${f.id}-preview-container')" class="hidden">
                             </label>
                         </div>
@@ -955,7 +955,7 @@
 
         function closeFormModal() { document.getElementById('overlay-form').classList.add('hidden'); }
 
-        // COMPRESSÃO AUTOMÁTICA DE MÚLTIPLAS FOTOS
+        // CARREGAMENTO DE MÚLTIPLAS FOTOS EM QUALIDADE NATURAL (SEM COMPRESSÃO)
         function handleMultipleImagesUpload(event) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -964,59 +964,35 @@
             container.innerHTML = '';
             container.classList.remove('hidden');
 
-            Array.from(files).forEach((file, index) => {
+            Array.from(files).forEach((file) => {
                 const reader = new FileReader();
                 reader.onload = e => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600; const MAX_HEIGHT = 600;
-                        let width = img.width; let height = img.height;
-                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
-                        state.formState.tempImagesMultiple.push(compressedDataUrl);
-                        container.innerHTML += `
-                            <div class="h-24 rounded-xl overflow-hidden border border-stone-200 relative bg-stone-100">
-                                <img src="${compressedDataUrl}" class="w-full h-full object-cover">
-                            </div>
-                        `;
-                    };
-                    img.src = e.target.result;
+                    const originalDataUrl = e.target.result;
+                    state.formState.tempImagesMultiple.push(originalDataUrl);
+                    container.innerHTML += `
+                        <div class="h-24 rounded-xl overflow-hidden border border-stone-200 relative bg-stone-100">
+                            <img src="${originalDataUrl}" class="w-full h-full object-cover">
+                        </div>
+                    `;
                 };
                 reader.readAsDataURL(file);
             });
         }
 
-        // COMPRESSÃO DE UMA FOTO ÚNICA
+        // CARREGAMENTO DE FOTO ÚNICA EM QUALIDADE NATURAL (SEM COMPRESSÃO)
         function handleImageUpload(event, previewId, containerId) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = e => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600; const MAX_HEIGHT = 600;
-                        let width = img.width; let height = img.height;
-                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
-                        const previewEl = document.getElementById(previewId);
-                        previewEl.src = compressedDataUrl;
-                        state.formState.tempImgPosX = 50; state.formState.tempImgPosY = 50;
-                        previewEl.style.objectPosition = '50% 50%';
-                        document.getElementById(containerId).classList.remove('hidden');
-                        state.formState.tempImage = compressedDataUrl;
-                        setTimeout(() => initImageDrag(previewId), 50);
-                    };
-                    img.src = e.target.result;
+                    const originalDataUrl = e.target.result;
+                    const previewEl = document.getElementById(previewId);
+                    previewEl.src = originalDataUrl;
+                    state.formState.tempImgPosX = 50; state.formState.tempImgPosY = 50;
+                    previewEl.style.objectPosition = '50% 50%';
+                    document.getElementById(containerId).classList.remove('hidden');
+                    state.formState.tempImage = originalDataUrl;
+                    setTimeout(() => initImageDrag(previewId), 50);
                 };
                 reader.readAsDataURL(file);
             }
